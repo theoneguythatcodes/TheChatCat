@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TheChatCat — Room Invitation</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app/js/supabase.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    #e5edf5 0,
+                    #f4f6f8 240px,
+                    #f8f8f8 100%
+                );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        /* Main container */
+
+        .invite-container {
+            width: 92%;
+            max-width: 540px;
+
+            background: #ffffff;
+
+            border: 1px solid #b7c2cc;
+            border-radius: 4px;
+
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.16);
+        }
+
+
+        /* Header */
+
+        .invite-header {
+            padding: 16px 20px;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    #f8f8f8,
+                    #e7e7e7
+                );
+
+            border-bottom: 1px solid #c7c7c7;
+        }
+
+        .brand {
+            margin: 0;
+
+            color: #333;
+
+            font-size: 19px;
+            font-weight: bold;
+        }
+
+        .brand span {
+            color: #2878bd;
+        }
+
+
+        /* Content */
+
+        .invite-body {
+            padding: 30px;
+        }
+
+        .page-title {
+            margin: 0 0 7px;
+
+            color: #333;
+
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        .page-subtitle {
+            margin: 0 0 25px;
+
+            color: #666;
+
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+
+        /* Room information */
+
+        .room-information {
+            padding: 18px;
+
+            background: #f7f9fb;
+
+            border: 1px solid #cbd4dc;
+            border-radius: 3px;
+        }
+
+        .room-label {
+            margin: 0 0 5px;
+
+            color: #777;
+
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .room-name {
+            margin: 0 0 9px;
+
+            color: #1e5f91;
+
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .room-description {
+            margin: 0;
+
+            color: #444;
+
+            font-size: 13px;
+            line-height: 1.5;
+
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .room-address {
+            margin-top: 14px;
+            padding-top: 11px;
+
+            border-top: 1px solid #d9dfe4;
+
+            color: #777;
+
+            font-size: 11px;
+        }
+
+        .room-address strong {
+            color: #555;
+        }
+
+
+        /* Status */
+
+        .status {
+            display: none;
+
+            margin-top: 18px;
+            padding: 11px 13px;
+
+            border: 1px solid #c8c8c8;
+            border-radius: 3px;
+
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .status.success {
+            background: #f1f8f1;
+            border-color: #b7cfb7;
+            color: #376337;
+        }
+
+        .status.error {
+            background: #fff2f2;
+            border-color: #d6aaaa;
+            color: #863838;
+        }
+
+
+        /* Actions */
+
+        .actions {
+            margin-top: 24px;
+
+            padding-top: 18px;
+
+            border-top: 1px solid #ddd;
+
+            text-align: right;
+        }
+
+        .button {
+            display: inline-block;
+
+            min-width: 130px;
+
+            padding: 8px 16px;
+
+            border: 1px solid #1c6095;
+            border-radius: 3px;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    #66a9df,
+                    #2878bd
+                );
+
+            color: #fff;
+
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+
+            text-align: center;
+            text-decoration: none;
+
+            text-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.3);
+
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                0 1px 2px rgba(0, 0, 0, 0.12);
+
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #76b5e6,
+                    #347fc0
+                );
+        }
+
+        .button:active {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #2878bd,
+                    #66a9df
+                );
+        }
+
+        button.button {
+            appearance: none;
+        }
+
+        button.button:disabled {
+            opacity: 0.65;
+            cursor: default;
+        }
+
+        .button-secondary {
+            margin-left: 7px;
+
+            border-color: #aaa;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    #ffffff,
+                    #e2e2e2
+                );
+
+            color: #444;
+
+            text-shadow: none;
+        }
+
+        .button-secondary:hover {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #ffffff,
+                    #ededed
+                );
+        }
+
+
+        /* Login */
+
+        .login-note {
+            margin-top: 15px;
+
+            color: #777;
+
+            font-size: 11px;
+            line-height: 1.5;
+
+            text-align: right;
+        }
+
+        .login-note a {
+            color: #1769aa;
+            text-decoration: none;
+        }
+
+        .login-note a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* Loading */
+
+        .loading {
+            padding: 35px 0;
+
+            color: #777;
+
+            font-size: 13px;
+
+            text-align: center;
+        }
+
+
+        .hidden {
+            display: none !important;
+        }
+
+
+        /* Error */
+
+        .error-content {
+            padding: 35px 0;
+
+            text-align: center;
+        }
+
+        .error-title {
+            margin: 0 0 10px;
+
+            font-size: 22px;
+            font-weight: normal;
+
+            color: #444;
+        }
+
+        .error-text {
+            margin: 0;
+
+            color: #666;
+
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+
+        /* Footer */
+
+        .invite-footer {
+            padding: 13px 20px;
+
+            border-top: 1px solid #ddd;
+
+            background: #f5f5f5;
+
+            color: #888;
+
+            font-size: 10px;
+
+            text-align: center;
+        }
+
+
+        /* Mobile */
+
+        @media (max-width: 600px) {
+
+            .invite-body {
+                padding: 22px 18px;
+            }
+
+            .actions {
+                text-align: center;
+            }
+
+            .button {
+                display: block;
+                width: 100%;
+                margin: 7px 0;
+            }
+
+            .button-secondary {
+                margin-left: 0;
+            }
+
+            .login-note {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <main class="invite-container">
+
+        <header class="invite-header">
+            <h1 class="brand">
+                The<span>ChatCat</span>
+            </h1>
+        </header>
+
+
+        <section class="invite-body">
+
+            <!-- Loading -->
+
+            <div id="loading-state" class="loading">
+                Verifying invitation...
+            </div>
+
+
+            <!-- Valid invitation -->
+
+            <div id="invite-state" class="hidden">
+
+                <h2 class="page-title">
+                    Room Invitation
+                </h2>
+
+                <p class="page-subtitle">
+                    You have been invited to join the following
+                    room on TheChatCat.
+                </p>
+
+
+                <div class="room-information">
+
+                    <p class="room-label">
+                        Room
+                    </p>
+
+                    <h3
+                        id="room-name"
+                        class="room-name"
+                    >
+                        —
+                    </h3>
+
+                    <p
+                        id="room-description"
+                        class="room-description"
+                    >
+                    </p>
+
+                    <div class="room-address">
+
+                        <strong>
+                            Address:
+                        </strong>
+
+                        <span id="room-slug">
+                            —
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="status-message"
+                    class="status"
+                ></div>
+
+
+                <div
+                    id="actions"
+                    class="actions"
+                >
+
+                    <button
+                        id="join-button"
+                        type="button"
+                        class="button"
+                    >
+                        Join Room
+                    </button>
+
+                    <a
+                        href="index.html"
+                        class="button button-secondary"
+                    >
+                        Cancel
+                    </a>
+
+                </div>
+
+
+                <div
+                    id="login-note"
+                    class="login-note hidden"
+                >
+                    You must be signed in to join this room.
+                    <br>
+
+                    <a
+                        id="login-link"
+                        href="app/login.html"
+                    >
+                        Sign in to TheChatCat
+                    </a>
+                </div>
+
+            </div>
+
+
+            <!-- Invalid invitation -->
+
+            <div
+                id="error-state"
+                class="hidden"
+            >
+
+                <div class="error-content">
+
+                    <h2 class="error-title">
+                        Invitation Unavailable
+                    </h2>
+
+                    <p
+                        id="error-message"
+                        class="error-text"
+                    >
+                        This invitation is no longer available.
+                    </p>
+
+                    <div class="actions">
+
+                        <a
+                            href="index.html"
+                            class="button"
+                        >
+                            Return to TheChatCat
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <footer class="invite-footer">
+            TheChatCat Network
+        </footer>
+
+    </main>
+
+
+<script>
+
+    let currentUser = null;
+    let inviteToken = null;
+    let roomId = null;
+    let inviteData = null;
+
+
+    /*
+     * ---------------------------------------------
+     * Read invitation URL
+     * ---------------------------------------------
+     */
+
+    function readInviteURL() {
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        inviteToken =
+            params.get("token");
+
+        roomId =
+            params.get("room");
+
+
+        if (!inviteToken || !roomId) {
+
+            showError(
+                "The invitation link is incomplete or invalid."
+            );
+
+            return false;
+        }
+
+
+        return true;
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Session
+     * ---------------------------------------------
+     */
+
+    async function loadSession() {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.auth.getSession();
+
+
+        if (error) {
+
+            console.error(
+                "SESSION ERROR:",
+                error
+            );
+
+            currentUser = null;
+
+            return;
+        }
+
+
+        currentUser =
+            data.session
+                ? data.session.user
+                : null;
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Load invitation
+     *
+     * SECURITY DEFINER RPC:
+     * get_room_invite
+     * ---------------------------------------------
+     */
+
+    async function loadInvite() {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.rpc(
+                "get_room_invite",
+                {
+                    invite_token: inviteToken,
+                    requested_room_id: roomId
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "INVITE ERROR:",
+                error
+            );
+
+            redirectToInviteError();
+
+            return;
+        }
+
+
+        if (!data) {
+
+            redirectToInviteError();
+
+            return;
+        }
+
+
+        inviteData = data;
+
+
+        if (
+            inviteData.status === "expired" ||
+            inviteData.status === "used" ||
+            inviteData.status === "invalid"
+        ) {
+
+            redirectToInviteError();
+
+            return;
+        }
+
+
+        if (
+            inviteData.status !== "valid"
+        ) {
+
+            redirectToInviteError();
+
+            return;
+        }
+
+
+        if (
+            inviteData.room_id &&
+            inviteData.room_id !== roomId
+        ) {
+
+            redirectToInviteError();
+
+            return;
+        }
+
+
+        document
+            .getElementById("room-name")
+            .textContent =
+            inviteData.room_name ||
+            "Unnamed room";
+
+
+        document
+            .getElementById("room-description")
+            .textContent =
+            inviteData.description ||
+            "No description was provided for this room.";
+
+
+        document
+            .getElementById("room-slug")
+            .textContent =
+            inviteData.room_slug ||
+            roomId;
+
+
+        document
+            .getElementById("loading-state")
+            .classList.add("hidden");
+
+
+        document
+            .getElementById("invite-state")
+            .classList.remove("hidden");
+
+
+        updateSessionUI();
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Session-dependent UI
+     * ---------------------------------------------
+     */
+
+    function updateSessionUI() {
+
+        const joinButton =
+            document.getElementById("join-button");
+
+        const loginNote =
+            document.getElementById("login-note");
+
+
+        if (!currentUser) {
+
+            joinButton.classList.add("hidden");
+
+            loginNote.classList.remove("hidden");
+
+            return;
+        }
+
+
+        joinButton.classList.remove("hidden");
+
+        loginNote.classList.add("hidden");
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Consume invitation
+     *
+     * SECURITY DEFINER RPC:
+     * consume_room_invite
+     * ---------------------------------------------
+     */
+
+
+        async function joinRoom() {
+
+            if (!currentUser) {
+
+                window.location.href =
+                    "app/login.html?redirect=" +
+                    encodeURIComponent(
+                        "../invite.html?token=" +
+                        inviteToken +
+                        "&room=" +
+                        roomId
+                    );
+
+                return;
+            }
+
+
+            const joinButton =
+                document.getElementById("join-button");
+
+
+            joinButton.disabled = true;
+
+            joinButton.textContent =
+                "Joining...";
+
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient.rpc(
+                    "consume_room_invite",
+                    {
+                        invite_token: inviteToken,
+                        requested_room_id: roomId
+                    }
+                );
+
+
+            console.log("CONSUME RESULT:", data);
+            console.log("CONSUME ERROR:", error);
+
+
+            if (error) {
+
+                console.error(
+                    "JOIN ERROR:",
+                    error
+                );
+
+                showStatus(
+                    "Could not join the room: " +
+                    error.message,
+                    "error"
+                );
+
+                joinButton.disabled = false;
+                joinButton.textContent = "Join Room";
+
+                return;
+            }
+
+
+            if (!data) {
+
+                showStatus(
+                    "The server returned no response.",
+                    "error"
+                );
+
+                joinButton.disabled = false;
+                joinButton.textContent = "Join Room";
+
+                return;
+            }
+
+
+            if (data.status !== "success") {
+
+                console.error(
+                    "JOIN STATUS:",
+                    data.status
+                );
+
+                showStatus(
+                    "Could not join the room. Status: " +
+                    data.status,
+                    "error"
+                );
+
+                joinButton.disabled = false;
+                joinButton.textContent = "Join Room";
+
+                return;
+            }
+
+
+            showStatus(
+                "You have joined the room successfully. Redirecting...",
+                "success"
+            );
+
+
+            setTimeout(function () {
+
+                window.location.href =
+                    "app/room.html?room=" +
+                    encodeURIComponent(roomId);
+
+            }, 600);
+        }
+
+
+
+
+    /*
+     * ---------------------------------------------
+     * Error handling
+     * ---------------------------------------------
+     */
+
+    function showError(message) {
+
+        document
+            .getElementById("loading-state")
+            .classList.add("hidden");
+
+
+        document
+            .getElementById("invite-state")
+            .classList.add("hidden");
+
+
+        document
+            .getElementById("error-state")
+            .classList.remove("hidden");
+
+
+        document
+            .getElementById("error-message")
+            .textContent = message;
+    }
+
+
+    function showStatus(message, type) {
+
+        const status =
+            document.getElementById("status-message");
+
+
+        status.textContent = message;
+
+        status.className = "status " + type;
+
+        status.style.display = "block";
+    }
+
+
+    function redirectToInviteError() {
+
+        if (!inviteToken) {
+
+            window.location.href =
+                "inviterr.html";
+
+            return;
+        }
+
+        window.location.href =
+            "inviterr.html?tok=" +
+            encodeURIComponent(inviteToken) +
+            "&room=" +
+            encodeURIComponent(roomId);
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Initialization
+     * ---------------------------------------------
+     */
+
+    async function initInvite() {
+
+        if (!readInviteURL()) {
+            return;
+        }
+
+
+        await loadSession();
+
+        await loadInvite();
+    }
+
+
+    document
+        .getElementById("join-button")
+        .addEventListener(
+            "click",
+            joinRoom
+        );
+
+
+    initInvite();
+
+</script>
+
+</body>
+</html>

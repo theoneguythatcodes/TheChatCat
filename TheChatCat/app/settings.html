@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TheChatCat - Settings</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+
+    <style>
+
+        .settings-container {
+            width: 650px;
+            max-width: 90%;
+            margin: 35px auto;
+        }
+
+        .settings-box {
+            background: #f5f5f5;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            padding: 25px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+        .settings-box h1 {
+            margin-top: 0;
+            color: #333;
+            font-size: 26px;
+        }
+
+        .settings-section {
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .settings-section h2 {
+            margin-top: 0;
+            color: #444;
+            font-size: 19px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            font-size: 14px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-help {
+            margin-top: 5px;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .save-button,
+        .avatar-button {
+            padding: 10px 18px;
+
+            border: 1px solid #1d5fa7;
+            border-radius: 4px;
+
+            background: linear-gradient(
+                #6eb5f7,
+                #2878c8
+            );
+
+            color: white;
+
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .save-button:hover,
+        .avatar-button:hover {
+            background: linear-gradient(
+                #82c1fa,
+                #3688d5
+            );
+        }
+
+        .save-button:disabled,
+        .avatar-button:disabled {
+            opacity: .6;
+            cursor: wait;
+        }
+
+        #settings-message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .avatar-settings {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+
+            margin-bottom: 20px;
+        }
+
+        .avatar-preview {
+            width: 90px;
+            height: 90px;
+
+            border: 1px solid #999;
+            border-radius: 5px;
+
+            background: linear-gradient(
+                #eeeeee,
+                #cccccc
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+
+            flex-shrink: 0;
+
+            font-size: 42px;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-info {
+            color: #555;
+        }
+
+        .danger-zone {
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+
+        .danger-zone h2 {
+            color: #9b2226;
+            font-size: 19px;
+        }
+
+        .logout-button {
+            padding: 10px 18px;
+
+            border: 1px solid #888;
+            border-radius: 4px;
+
+            background: linear-gradient(
+                #eeeeee,
+                #cccccc
+            );
+
+            color: #333;
+
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .logout-button:hover {
+            background: linear-gradient(
+                #ffffff,
+                #dddddd
+            );
+        }
+
+        .back-link {
+            margin-top: 20px;
+            display: block;
+        }
+
+        #avatar-file {
+            display: none;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <div class="logo">
+        TheChatCat
+    </div>
+
+    <nav>
+
+        <a href="index.html">
+            Home
+        </a>
+
+        <a href="profile.html">
+            Profile
+        </a>
+
+        <a href="settings.html">
+            Settings
+        </a>
+
+        <a href="../index.html">
+            Exit
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main class="settings-container">
+
+    <div class="settings-box">
+
+        <h1>Account Settings</h1>
+
+        <p>
+            Change your TheChatCat profile information.
+        </p>
+
+
+        <!-- PROFILE -->
+
+        <div class="settings-section">
+
+            <h2>
+                Profile
+            </h2>
+
+
+            <!-- AVATAR -->
+
+            <div class="avatar-settings">
+
+                <div
+                    class="avatar-preview"
+                    id="avatar-preview"
+                >
+                    *
+                </div>
+
+
+                <div class="avatar-info">
+
+                    <strong>
+                        Profile Avatar
+                    </strong>
+
+                    <p>
+                        Choose an image to use
+                        as your profile avatar.
+                    </p>
+
+                    <label
+                        for="avatar-file"
+                        class="avatar-button"
+                    >
+                        Choose Avatar
+                    </label>
+
+                    <input
+                        type="file"
+                        id="avatar-file"
+                        accept="image/png,image/jpeg,image/webp"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <form id="settings-form">
+
+
+                <div class="form-group">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        maxlength="30"
+                        required
+                        autocomplete="username"
+                    >
+
+                    <div class="form-help">
+                        Your unique TheChatCat username.
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="display-name">
+                        Display Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="display-name"
+                        maxlength="50"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="bio">
+                        Bio
+                    </label>
+
+                    <textarea
+                        id="bio"
+                        maxlength="300"
+                        placeholder="Tell people something about yourself..."
+                    ></textarea>
+
+                    <div class="form-help">
+                        Maximum 300 characters.
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="save-button"
+                    id="save-button"
+                >
+                    Save Changes
+                </button>
+
+
+            </form>
+
+
+            <p id="settings-message"></p>
+
+        </div>
+
+
+        <!-- ACCOUNT -->
+
+        <div class="danger-zone">
+
+            <h2>
+                Account
+            </h2>
+
+            <p>
+                Sign out of your TheChatCat account
+                on this device.
+            </p>
+
+            <button
+                type="button"
+                class="logout-button"
+                id="logout-button"
+            >
+                Log Out
+            </button>
+
+        </div>
+
+
+        <a
+            class="back-link"
+            href="index.html"
+        >
+            ← Back to TheChatCat
+        </a>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    <p>
+        © 2012-2026 TheChatCat
+    </p>
+
+</footer>
+
+
+<script>
+
+
+let currentUser = null;
+
+let selectedAvatarFile = null;
+
+
+/* --------------------------------
+   ELEMENTS
+-------------------------------- */
+
+
+const form =
+    document.getElementById(
+        "settings-form"
+    );
+
+
+const saveButton =
+    document.getElementById(
+        "save-button"
+    );
+
+
+const message =
+    document.getElementById(
+        "settings-message"
+    );
+
+
+const usernameInput =
+    document.getElementById(
+        "username"
+    );
+
+
+const displayNameInput =
+    document.getElementById(
+        "display-name"
+    );
+
+
+const bioInput =
+    document.getElementById(
+        "bio"
+    );
+
+
+const avatarFile =
+    document.getElementById(
+        "avatar-file"
+    );
+
+
+const avatarPreview =
+    document.getElementById(
+        "avatar-preview"
+    );
+
+
+const logoutButton =
+    document.getElementById(
+        "logout-button"
+    );
+
+
+/* --------------------------------
+   LOAD SETTINGS
+-------------------------------- */
+
+
+async function loadSettings() {
+
+    const {
+        data: { session },
+        error
+    } =
+        await supabaseClient.auth.getSession();
+
+
+    if (error || !session) {
+
+        window.location.href =
+            "login.html";
+
+        return;
+
+    }
+
+
+    currentUser =
+        session.user;
+
+
+    const { data: profile, error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .select(`
+                username,
+                display_name,
+                bio,
+                avatar_url
+            `)
+            .eq("id", currentUser.id)
+            .single();
+
+
+    if (profileError || !profile) {
+
+        console.error(
+            "PROFILE LOAD ERROR:",
+            profileError
+        );
+
+        message.textContent =
+            "Could not load your profile.";
+
+        return;
+
+    }
+
+
+    usernameInput.value =
+        profile.username || "";
+
+
+    displayNameInput.value =
+        profile.display_name || "";
+
+
+    bioInput.value =
+        profile.bio || "";
+
+
+    if (profile.avatar_url) {
+
+        showAvatar(
+            profile.avatar_url
+        );
+
+    }
+
+}
+
+
+/* --------------------------------
+   SHOW AVATAR
+-------------------------------- */
+
+
+function showAvatar(url) {
+
+    avatarPreview.innerHTML = "";
+
+
+    const image =
+        document.createElement("img");
+
+
+    image.src = url;
+
+    image.alt = "Profile avatar";
+
+
+    image.onerror = () => {
+
+        avatarPreview.innerHTML =
+            "*";
+
+    };
+
+
+    avatarPreview.appendChild(
+        image
+    );
+
+}
+
+
+/* --------------------------------
+   SELECT AVATAR
+-------------------------------- */
+
+
+avatarFile.addEventListener(
+    "change",
+    () => {
+
+        const file =
+            avatarFile.files[0];
+
+
+        if (!file) {
+            return;
+        }
+
+
+        /*
+            Maximum 5 MB.
+        */
+
+        if (file.size > 5 * 1024 * 1024) {
+
+            message.textContent =
+                "Avatar must be smaller than 5 MB.";
+
+            avatarFile.value = "";
+
+            selectedAvatarFile = null;
+
+            return;
+
+        }
+
+
+        const allowedTypes = [
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+            "image/jfif"
+        ];
+
+
+        if (!allowedTypes.includes(
+            file.type
+        )) {
+
+            message.textContent =
+                "Only PNG, JPG, JFIF and WebP images are allowed.";
+
+            avatarFile.value = "";
+
+            selectedAvatarFile = null;
+
+            return;
+
+        }
+
+
+        selectedAvatarFile =
+            file;
+
+
+        /*
+            Local preview before upload.
+        */
+
+        const previewURL =
+            URL.createObjectURL(file);
+
+
+        showAvatar(
+            previewURL
+        );
+
+
+        message.textContent =
+            "Avatar selected. Save your changes to upload it.";
+
+    }
+);
+
+
+/* --------------------------------
+   UPLOAD AVATAR
+-------------------------------- */
+
+
+async function uploadAvatar(file) {
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+
+    const filePath =
+    currentUser.id +
+    "/avatar." +
+    extension;
+
+        const {
+            data: { user },
+            error: userError
+        } = await supabaseClient.auth.getUser();
+
+        console.log("Authenticated user ID:", user?.id);
+        console.log("Auth error:", userError);
+        console.log("====================");
+
+    const { error: uploadError } =
+        await supabaseClient
+            .storage
+            .from("avatars")
+
+
+
+            .upload(
+                filePath,
+                file,
+                {
+                    upsert: true,
+                    contentType: file.type
+                }
+            );
+
+
+    if (uploadError) {
+
+        console.error(
+            "AVATAR UPLOAD ERROR:",
+            uploadError
+        );
+
+        throw uploadError;
+
+    }
+
+
+    const {
+        data: publicData
+    } =
+        supabaseClient
+            .storage
+            .from("avatars")
+            .getPublicUrl(
+                filePath
+            );
+
+
+    return publicData.publicUrl;
+
+}
+
+
+
+/* --------------------------------
+   SAVE PROFILE
+-------------------------------- */
+
+
+form.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        const username =
+            usernameInput.value.trim();
+
+
+        const displayName =
+            displayNameInput.value.trim();
+
+
+        const bio =
+            bioInput.value.trim();
+
+
+        if (!username || !displayName) {
+
+            message.textContent =
+                "Username and display name are required.";
+
+            return;
+
+        }
+
+
+        saveButton.disabled = true;
+
+        saveButton.textContent =
+            "Saving...";
+
+        message.textContent = "";
+
+
+        try {
+
+            let avatarURL = null;
+
+
+            /*
+                Only upload if the user
+                selected a new avatar.
+            */
+
+            if (selectedAvatarFile) {
+
+                avatarURL =
+                    await uploadAvatar(
+                        selectedAvatarFile
+                    );
+
+            }
+
+
+            const updateData = {
+
+                username:
+                    username,
+
+                display_name:
+                    displayName,
+
+                bio:
+                    bio
+
+            };
+
+
+            if (avatarURL) {
+
+                updateData.avatar_url =
+                    avatarURL;
+
+            }
+
+
+            const { error } =
+                await supabaseClient
+                    .from("profiles")
+                    .update(
+                        updateData
+                    )
+                    .eq(
+                        "id",
+                        currentUser.id
+                    );
+
+
+            if (error) {
+
+                console.error(
+                    "PROFILE UPDATE ERROR:",
+                    error
+                );
+
+                if (
+                    error.code ===
+                    "23505"
+                ) {
+
+                    throw new Error(
+                        "That username is already taken."
+                    );
+
+                }
+
+                throw error;
+
+            }
+
+
+            if (avatarURL) {
+
+                showAvatar(
+                    avatarURL
+                );
+
+            }
+
+
+            selectedAvatarFile =
+                null;
+
+
+            avatarFile.value =
+                "";
+
+
+            message.textContent =
+                "Profile updated successfully!";
+
+
+        } catch (error) {
+
+            console.error(
+                "SETTINGS ERROR:",
+                error
+            );
+
+
+            message.textContent =
+                error.message ||
+                "Could not save your profile.";
+
+        }
+
+
+        saveButton.disabled = false;
+
+        saveButton.textContent =
+            "Save Changes";
+
+    }
+);
+
+
+/* --------------------------------
+   LOGOUT
+-------------------------------- */
+
+
+logoutButton.addEventListener(
+    "click",
+    async () => {
+
+        logoutButton.disabled =
+            true;
+
+        logoutButton.textContent =
+            "Logging out...";
+
+
+        const { error } =
+            await supabaseClient.auth.signOut();
+
+
+        if (error) {
+
+            console.error(
+                "LOGOUT ERROR:",
+                error
+            );
+
+            logoutButton.disabled =
+                false;
+
+            logoutButton.textContent =
+                "Log Out";
+
+            message.textContent =
+                error.message;
+
+            return;
+
+        }
+
+
+        window.location.href =
+            "login.html";
+
+    }
+);
+
+
+/* --------------------------------
+   START
+-------------------------------- */
+
+
+loadSettings();
+
+</script>
+
+<script>
+const OFFICIAL_ACCOUNT_ID = "c2f26c43-47a8-4741-9a3a-8b675f39de02";
+
+const BIO_LIMIT =
+    currentUser.id === OFFICIAL_ACCOUNT_ID
+        ? 5000
+        : 300;
+
+document.getElementById("bio").maxLength = BIO_LIMIT;
+</script>
+
+</body>
+
+</html>
