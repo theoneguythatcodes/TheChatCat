@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TheChatCat — Create Invitation</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+
+    <style>
+        .invite-generator {
+            max-width: 650px;
+            margin: 30px auto;
+        }
+
+        .generator-box {
+            background: #fff;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            box-shadow:
+                0 2px 7px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 #fff;
+        }
+
+        .generator-header {
+            padding: 12px 16px;
+
+            background:
+                linear-gradient(
+                    #69afe8,
+                    #2878bd
+                );
+
+            border-bottom: 1px solid #185b91;
+
+            color: #fff;
+
+            font-size: 16px;
+            font-weight: bold;
+
+            text-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.35);
+        }
+
+        .generator-content {
+            padding: 22px;
+        }
+
+        .form-row {
+            margin-bottom: 18px;
+        }
+
+        .form-row label {
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: #444;
+
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .form-row select {
+            width: 100%;
+
+            padding: 8px 9px;
+
+            border: 1px solid #aaa;
+            border-radius: 3px;
+
+            background: #fff;
+
+            color: #333;
+
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+        }
+
+        .form-help {
+            margin-top: 5px;
+
+            color: #777;
+
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .button-row {
+            padding-top: 7px;
+
+            border-top: 1px solid #ddd;
+
+            text-align: right;
+        }
+
+        .button {
+            display: inline-block;
+
+            padding: 8px 16px;
+
+            border: 1px solid #185b91;
+            border-radius: 3px;
+
+            background:
+                linear-gradient(
+                    #69afe8,
+                    #2878bd
+                );
+
+            color: #fff;
+
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+
+            text-decoration: none;
+
+            text-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.35);
+
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.4),
+                0 1px 2px rgba(0,0,0,0.15);
+
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background:
+                linear-gradient(
+                    #78b5e7,
+                    #347fbd
+                );
+        }
+
+        .button:disabled {
+            opacity: 0.65;
+            cursor: default;
+        }
+
+        .button-secondary {
+            margin-right: 7px;
+
+            border-color: #999;
+
+            background:
+                linear-gradient(
+                    #fff,
+                    #ddd
+                );
+
+            color: #444;
+
+            text-shadow: none;
+        }
+
+        .button-secondary:hover {
+            background:
+                linear-gradient(
+                    #fff,
+                    #e9e9e9
+                );
+        }
+
+        .status {
+            display: none;
+
+            margin-bottom: 18px;
+
+            padding: 10px 12px;
+
+            border: 1px solid #ccc;
+            border-radius: 3px;
+
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .status.error {
+            background: #fff1f1;
+            border-color: #d3a1a1;
+            color: #853737;
+        }
+
+        .status.success {
+            background: #f0f8f0;
+            border-color: #a9c9a9;
+            color: #356335;
+        }
+
+        .result-box {
+            display: none;
+
+            margin-top: 22px;
+            padding-top: 20px;
+
+            border-top: 1px solid #ddd;
+        }
+
+        .result-title {
+            margin: 0 0 8px;
+
+            color: #333;
+
+            font-size: 15px;
+        }
+
+        .result-description {
+            margin: 0 0 12px;
+
+            color: #666;
+
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .invite-link-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .invite-link {
+            flex: 1;
+
+            min-width: 0;
+
+            padding: 8px;
+
+            border: 1px solid #aaa;
+            border-radius: 3px;
+
+            background: #f5f5f5;
+
+            color: #333;
+
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+        }
+
+        .copy-button {
+            flex-shrink: 0;
+        }
+
+        .expiration {
+            margin-top: 9px;
+
+            color: #777;
+
+            font-size: 11px;
+        }
+
+        .loading {
+            padding: 25px;
+
+            color: #777;
+
+            text-align: center;
+
+            font-size: 13px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 650px) {
+            .invite-generator {
+                margin: 15px 10px;
+            }
+
+            .generator-content {
+                padding: 17px;
+            }
+
+            .invite-link-row {
+                display: block;
+            }
+
+            .invite-link {
+                width: 100%;
+                display: block;
+                margin-bottom: 7px;
+            }
+
+            .copy-button {
+                width: 100%;
+            }
+
+            .button-row {
+                text-align: center;
+            }
+
+            .button-row .button {
+                display: block;
+                width: 100%;
+                margin: 6px 0;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+<header>
+    <div class="container">
+
+        <h1>TheChatCat</h1>
+
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="messages.html">Messages</a>
+            <a href="settings.html">Settings</a>
+        </nav>
+
+    </div>
+</header>
+
+
+<main class="container invite-generator">
+
+    <div class="generator-box">
+
+        <div class="generator-header">
+            Create Room Invitation
+        </div>
+
+
+        <div class="generator-content">
+
+            <div
+                id="loading"
+                class="loading"
+            >
+                Loading your rooms...
+            </div>
+
+
+            <div
+                id="generator"
+                class="hidden"
+            >
+
+                <div
+                    id="status"
+                    class="status"
+                ></div>
+
+
+                <div class="form-row">
+
+                    <label for="room-select">
+                        Room
+                    </label>
+
+                    <select id="room-select">
+                        <option value="">
+                            Select a room...
+                        </option>
+                    </select>
+
+                    <div class="form-help">
+                        You can create invitations only for rooms
+                        that you own.
+                    </div>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <label for="expiration">
+                        Invitation expiration
+                    </label>
+
+                    <select id="expiration">
+
+                        <option value="60">
+                            1 hour
+                        </option>
+
+                        <option value="360">
+                            6 hours
+                        </option>
+
+                        <option value="720">
+                            12 hours
+                        </option>
+
+                        <option value="1440" selected>
+                            24 hours
+                        </option>
+
+                        <option value="4320">
+                            3 days
+                        </option>
+
+                        <option value="10080">
+                            7 days
+                        </option>
+
+                        <option value="43200">
+                            30 days
+                        </option>
+
+                    </select>
+
+                    <div class="form-help">
+                        The invitation will stop working after
+                        this period or once it has been used.
+                    </div>
+
+                </div>
+
+
+                <div class="button-row">
+
+                    <a
+                        href="index.html"
+                        class="button button-secondary"
+                    >
+                        Cancel
+                    </a>    
+
+                    <a
+                        id="back-settings-button"
+                        href="#"
+                        class="button button-secondary hidden"
+                    >
+                        Back to Room Settings
+                    </a>
+
+                    <button
+                        id="generate-button"
+                        class="button"
+                        type="button"
+                    >
+                        Generate Invitation
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="result"
+                    class="result-box"
+                >
+
+                    <h2 class="result-title">
+                        Invitation Created
+                    </h2>
+
+                    <p class="result-description">
+                        Share the following link with the person
+                        you want to invite. This invitation can
+                        only be used once.
+                    </p>
+
+
+                    <div class="invite-link-row">
+
+                        <input
+                            id="invite-link"
+                            class="invite-link"
+                            type="text"
+                            readonly
+                        >
+
+                        <button
+                            id="copy-button"
+                            class="button copy-button"
+                            type="button"
+                        >
+                            Copy Link
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="expiration-text"
+                        class="expiration"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<script>
+
+    let currentUser = null;
+    let userRooms = [];
+
+
+    /*
+     * ---------------------------------------------
+     * Status
+     * ---------------------------------------------
+     */
+
+    function showStatus(message, type) {
+
+        const status =
+            document.getElementById("status");
+
+        status.textContent = message;
+
+        status.className =
+            "status " + type;
+
+        status.style.display = "block";
+    }
+
+
+    function hideStatus() {
+
+        const status =
+            document.getElementById("status");
+
+        status.style.display = "none";
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Session
+     * ---------------------------------------------
+     */
+
+    async function loadSession() {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.auth.getSession();
+
+
+        if (error) {
+
+            console.error(
+                "SESSION ERROR:",
+                error
+            );
+
+            window.location.href =
+                "login.html";
+
+            return false;
+        }
+
+
+        if (!data.session) {
+
+            window.location.href =
+                "login.html";
+
+            return false;
+        }
+
+
+        currentUser =
+            data.session.user;
+
+
+        return true;
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Load rooms owned by user
+     * ---------------------------------------------
+     */
+
+    async function loadRooms() {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient
+                .from("rooms")
+                .select(`
+                    id,
+                    name,
+                    slug,
+                    description,
+                    is_private
+                `)
+                .eq(
+                    "owner_id",
+                    currentUser.id
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (error) {
+
+            console.error(
+                "ROOM LOAD ERROR:",
+                error
+            );
+
+            document
+                .getElementById("loading")
+                .textContent =
+                "Could not load your rooms.";
+
+            return false;
+        }
+
+
+        userRooms = data || [];
+
+
+        const select =
+            document.getElementById(
+                "room-select"
+            );
+
+
+        select.innerHTML =
+            '<option value="">Select a room...</option>';
+
+
+        userRooms.forEach(function(room) {
+
+            const option =
+                document.createElement("option");
+
+            option.value =
+                room.id;
+
+            option.textContent =
+                room.name +
+                (room.is_private
+                    ? " (Private)"
+                    : "");
+
+            select.appendChild(option);
+
+        });
+
+
+        if (userRooms.length === 0) {
+
+            select.innerHTML =
+                '<option value="">You do not own any rooms.</option>';
+
+            document
+                .getElementById("generate-button")
+                .disabled = true;
+        }
+
+
+        document
+            .getElementById("loading")
+            .classList.add("hidden");
+
+
+        document
+            .getElementById("generator")
+            .classList.remove("hidden");
+
+
+        return true;
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Generate invitation
+     * ---------------------------------------------
+     */
+
+    async function generateInvitation() {
+
+        hideStatus();
+
+
+        const roomSelect =
+            document.getElementById(
+                "room-select"
+            );
+
+
+        const expiration =
+            document.getElementById(
+                "expiration"
+            );
+
+
+        const roomId =
+            roomSelect.value;
+
+
+        const expiresIn =
+            parseInt(
+                expiration.value,
+                10
+            );
+
+
+        if (!roomId) {
+
+            showStatus(
+                "Please select a room.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (
+            !Number.isInteger(expiresIn) ||
+            expiresIn < 5 ||
+            expiresIn > 43200
+        ) {
+
+            showStatus(
+                "The selected expiration period is invalid.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const button =
+            document.getElementById(
+                "generate-button"
+            );
+
+
+        button.disabled = true;
+
+        button.textContent =
+            "Generating...";
+
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.rpc(
+                "create_room_invite",
+                {
+                    target_room_id: roomId,
+                    expires_in_minutes: expiresIn
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "INVITE GENERATION ERROR:",
+                error
+            );
+
+
+            showStatus(
+                "The invitation could not be created.",
+                "error"
+            );
+
+
+            button.disabled = false;
+
+            button.textContent =
+                "Generate Invitation";
+
+            return;
+        }
+
+
+        if (
+            !data ||
+            data.status !== "success"
+        ) {
+
+            let message =
+                "The invitation could not be created.";
+
+
+            if (
+                data &&
+                data.status === "not_owner"
+            ) {
+
+                message =
+                    "You do not own this room.";
+
+            } else if (
+                data &&
+                data.status === "invalid_room"
+            ) {
+
+                message =
+                    "The selected room is invalid.";
+
+            } else if (
+                data &&
+                data.status === "invalid_expiration"
+            ) {
+
+                message =
+                    "The selected expiration period is invalid.";
+            }
+
+
+            showStatus(
+                message,
+                "error"
+            );
+
+
+            button.disabled = false;
+
+            button.textContent =
+                "Generate Invitation";
+
+            return;
+        }
+
+
+        /*
+         * Build the public invitation URL.
+         */
+
+        const inviteURL =
+            new URL(
+                "../invite.html",
+                window.location.href
+            );
+
+
+        inviteURL.searchParams.set(
+            "token",
+            data.token
+        );
+
+
+        inviteURL.searchParams.set(
+            "room",
+            data.room_id
+        );
+
+
+        const link =
+            inviteURL.href;
+
+
+        document
+            .getElementById("invite-link")
+            .value = link;
+
+
+        /*
+         * Display expiration time.
+         */
+
+        const expirationDate =
+            new Date(
+                data.expires_at
+            );
+
+
+        document
+            .getElementById("expiration-text")
+            .textContent =
+            "Expires: " +
+            expirationDate.toLocaleString();
+
+
+        document
+            .getElementById("result")
+            .style.display = "block";
+
+
+        showStatus(
+            "The invitation was created successfully.",
+            "success"
+        );
+
+
+        button.disabled = false;
+
+        button.textContent =
+            "Generate Invitation";
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Copy invitation link
+     * ---------------------------------------------
+     */
+
+    async function copyInvitationLink() {
+
+        const input =
+            document.getElementById(
+                "invite-link"
+            );
+
+
+        try {
+
+            await navigator.clipboard.writeText(
+                input.value
+            );
+
+
+            const button =
+                document.getElementById(
+                    "copy-button"
+                );
+
+
+            const originalText =
+                button.textContent;
+
+
+            button.textContent =
+                "Copied";
+
+
+            setTimeout(function() {
+
+                button.textContent =
+                    originalText;
+
+            }, 1500);
+
+
+        } catch (error) {
+
+            console.error(
+                "COPY ERROR:",
+                error
+            );
+
+
+            input.focus();
+            input.select();
+
+            document.execCommand("copy");
+        }
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Initialization
+     * ---------------------------------------------
+     */
+
+    async function init() {
+
+        const loggedIn =
+            await loadSession();
+
+
+        if (!loggedIn) {
+            return;
+        }
+
+
+        await loadRooms();
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * Events
+     * ---------------------------------------------
+     */
+
+    document
+        .getElementById("generate-button")
+        .addEventListener(
+            "click",
+            generateInvitation
+        );
+
+
+    document
+        .getElementById("copy-button")
+        .addEventListener(
+            "click",
+            copyInvitationLink
+        );
+
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    const source = params.get("utm_source");
+    const sourceRoomId = params.get("room");
+
+    if (source === "settings" && sourceRoomId) {
+        const backButton = document.getElementById(
+            "back-settings-button"
+        );
+
+        backButton.href =
+            "room-settings.html?room=" +
+            encodeURIComponent(sourceRoomId);
+
+        backButton.classList.remove("hidden");
+    }
+    init();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>TheChatCat - Redirecting...</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+
+            background: #e9e9e9;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            color: #333;
+        }
+
+        .container {
+            width: 520px;
+            max-width: 90%;
+
+            margin: 80px auto;
+
+            background: #f5f5f5;
+
+            border: 1px solid #aaa;
+            border-radius: 5px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 2px 6px rgba(0, 0, 0, 0.25);
+
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+
+            color: #333;
+
+            font-size: 26px;
+        }
+
+        p {
+            color: #555;
+        }
+
+        .button {
+            display: inline-block;
+
+            margin-top: 15px;
+
+            padding: 10px 18px;
+
+            border: 1px solid #1d5fa7;
+            border-radius: 4px;
+
+            background:
+                linear-gradient(
+                    #6eb5f7,
+                    #2878c8
+                );
+
+            color: white;
+
+            font-weight: bold;
+
+            text-decoration: none;
+
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+
+        .button:hover {
+            background:
+                linear-gradient(
+                    #82c1fa,
+                    #3688d5
+                );
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="container">
+
+        <h1>TheChatCat</h1>
+
+        <p id="message">
+            Redirecting...
+        </p>
+
+        <a
+            href="/"
+            id="home-link"
+            class="button"
+        >
+            Go home
+        </a>
+
+    </main>
+
+    <script>
+        const path = window.location.pathname;
+
+        /*
+         * We only handle URLs beginning with /app/
+         *
+         * Example:
+         *
+         * /app/global
+         * /app/random
+         * /app/gaming
+         *
+         * becomes:
+         *
+         * /app/index.html?room=global
+         */
+
+        if (path.startsWith("/app/")) {
+
+            const identifier = path
+                .substring("/app/".length)
+                .split("/")[0]
+                .trim();
+
+            /*
+             * Don't redirect if there is no identifier.
+             */
+
+            if (identifier) {
+
+                document.getElementById("message").textContent =
+                    "Opening room...";
+
+                const target =
+                    "/app/index.html?room=" +
+                    encodeURIComponent(identifier);
+
+                window.location.replace(target);
+
+            } else {
+
+                document.getElementById("message").textContent =
+                    "The requested page could not be found.";
+
+            }
+
+        } else {
+
+            document.getElementById("message").textContent =
+                "The requested page could not be found.";
+
+        }
+    </script>
+
+</body>
+</html>

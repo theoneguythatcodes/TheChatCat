@@ -1,0 +1,1211 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TheChatCat - Messages</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/verified.js"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+
+    <style>
+
+        .messages-container {
+            width: 1000px;
+            max-width: 95%;
+            margin: 25px auto;
+        }
+
+        .messages-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 620px;
+
+            background: #f5f5f5;
+
+            border: 1px solid #aaa;
+            border-radius: 5px;
+
+            overflow: hidden;
+
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+
+        /* CONVERSATIONS */
+
+        .conversation-sidebar {
+            background: #e9e9e9;
+            border-right: 1px solid #aaa;
+
+            overflow-y: auto;
+        }
+
+        .conversation-header {
+            padding: 15px;
+
+            font-size: 18px;
+            font-weight: bold;
+
+            color: #333;
+
+            border-bottom: 1px solid #bbb;
+        }
+
+        .conversation {
+            display: block;
+
+            padding: 12px;
+
+            border-bottom: 1px solid #ccc;
+
+            text-decoration: none;
+
+            color: #333;
+        }
+
+        .conversation:hover {
+            background: #f5f5f5;
+        }
+
+        .conversation.active {
+            background: #d8eaff;
+        }
+
+        .conversation-name {
+            font-weight: bold;
+            color: #2878c8;
+        }
+
+        .conversation-preview {
+            margin-top: 4px;
+
+            color: #666;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        /* CHAT */
+
+        .private-chat {
+            display: flex;
+
+            flex-direction: column;
+
+            min-width: 0;
+        }
+
+        .private-chat-header {
+            padding: 14px;
+
+            background: linear-gradient(
+                #ffffff,
+                #e5e5e5
+            );
+
+            border-bottom: 1px solid #aaa;
+        }
+
+        .private-chat-header a {
+            color: #2878c8;
+            text-decoration: none;
+        }
+
+        .private-chat-header a:hover {
+            text-decoration: underline;
+        }
+
+        .private-chat-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .private-chat-username {
+            color: #777;
+            font-size: 12px;
+        }
+
+
+        #private-chat-box {
+            flex: 1;
+
+            padding: 15px;
+
+            overflow-y: auto;
+
+            background: white;
+        }
+
+        .private-message {
+            margin-bottom: 12px;
+        }
+
+        .private-message-author {
+            font-weight: bold;
+            color: #2878c8;
+        }
+
+        .private-message-time {
+            margin-left: 8px;
+
+            color: #999;
+
+            font-size: 11px;
+        }
+
+        .private-message-content {
+            margin-top: 3px;
+
+            color: #333;
+
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+
+        /* INPUT */
+
+        .private-chat-input {
+            display: flex;
+
+            gap: 8px;
+
+            padding: 10px;
+
+            background: #eeeeee;
+
+            border-top: 1px solid #aaa;
+        }
+
+        #message-input {
+            flex: 1;
+
+            box-sizing: border-box;
+
+            padding: 10px;
+
+            border: 1px solid #aaa;
+            border-radius: 3px;
+
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
+        #send-button {
+            padding: 10px 18px;
+
+            border: 1px solid #1d5fa7;
+            border-radius: 4px;
+
+            background: linear-gradient(
+                #6eb5f7,
+                #2878c8
+            );
+
+            color: white;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background: linear-gradient(
+                #82c1fa,
+                #3688d5
+            );
+        }
+
+        #send-button:disabled {
+            opacity: .6;
+            cursor: wait;
+        }
+
+
+        .empty-chat {
+            height: 100%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color: #777;
+
+            text-align: center;
+        }
+
+
+        @media (max-width: 700px) {
+
+            .messages-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .conversation-sidebar {
+                max-height: 220px;
+            }
+
+            .private-chat {
+                height: 550px;
+            }
+
+        }
+
+        #close-button {
+            width: 28px;
+            height: 28px;
+
+            padding: 0;
+
+            border: 1px solid #777;
+            border-radius: 3px;
+
+            background: linear-gradient(#fefefe, #d9d9d9);
+
+            color: #333;
+
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 25px;
+
+            text-align: center;
+            cursor: pointer;
+
+            box-shadow:
+                inset 0 1px 0 #fff,
+                0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+
+        #close-button:hover {
+            background: linear-gradient(#ffffff, #c8c8c8);
+            color: #000;
+        }
+
+        #close-button:active {
+            background: linear-gradient(#c0c0c0, #eeeeee);
+
+            box-shadow:
+                inset 0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <div class="logo">
+        TheChatCat
+    </div>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="profile.html">Profile</a>
+        <a href="settings.html">Settings</a>
+        <a href="../index.html">Exit</a>
+    </nav>
+
+</header>
+
+
+<main class="messages-container">
+
+    <div class="messages-layout">
+
+
+        <!-- CONVERSATION LIST -->
+
+        <aside class="conversation-sidebar">
+
+            <div class="conversation-header">
+                Messages
+            </div>
+
+            <div id="conversation-list">
+
+                <div style="padding:15px;color:#777;">
+                    Loading...
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- PRIVATE CHAT -->
+
+        <section class="private-chat">
+            
+
+
+                <div
+                    class="private-chat-header"
+                    id="private-chat-header"
+                >
+                    <div>
+                        <div class="private-chat-name">
+                            Select a conversation
+                        </div>
+                    </div>
+
+                    <button id="close-button" type="button">
+                        ×
+                    </button>
+                </div>
+
+
+
+
+            <div id="private-chat-box">
+                <script>
+                    document.getElementById("close-button").addEventListener("click", () => {
+                        if (window.history.length > 1) {
+                            window.history.back();
+                        } else {
+                            window.location.href = "room.html";
+                        }
+                    });
+                </script>
+                <div class="empty-chat">
+
+                    <div>
+
+                        <strong>
+                            No conversation selected.
+                        </strong>
+
+                        <br>
+
+                        Select someone from your messages.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <form
+                class="private-chat-input"
+                id="message-form"
+            >
+
+                <input
+                    type="text"
+                    id="message-input"
+                    placeholder="Write a private message..."
+                    maxlength="2000"
+                    autocomplete="off"
+                    disabled
+                >
+
+                <button
+                    type="submit"
+                    id="send-button"
+                    disabled
+                >
+                    Send
+                </button>
+
+            </form>
+
+
+        </section>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    <p>
+        © 2012-2026 TheChatCat
+    </p>
+
+</footer>
+
+
+<script>
+
+
+let currentUser = null;
+
+let currentOtherUser = null;
+
+let currentProfile = null;
+
+let realtimeChannel = null;
+
+
+/* --------------------------------
+   HELPERS
+-------------------------------- */
+
+
+function escapeHtml(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+}
+
+
+function getUserFromURL() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    return params.get("user");
+
+}
+
+
+function scrollToBottom() {
+
+    const box =
+        document.getElementById(
+            "private-chat-box"
+        );
+
+    box.scrollTop =
+        box.scrollHeight;
+
+}
+
+
+/* --------------------------------
+   LOAD SESSION
+-------------------------------- */
+
+
+async function loadSession() {
+
+    const {
+        data: { session }
+    } = await supabaseClient.auth.getSession();
+
+
+    if (!session) {
+
+        window.location.href =
+            "login.html";
+
+        return false;
+
+    }
+
+
+    currentUser =
+        session.user;
+
+    return true;
+
+}
+
+
+/* --------------------------------
+   LOAD CONVERSATIONS
+-------------------------------- */
+
+
+async function loadConversations() {
+
+    const list =
+        document.getElementById(
+            "conversation-list"
+        );
+
+
+    const { data: messages, error } =
+        await supabaseClient
+            .from("private_messages")
+            .select(`
+                id,
+                sender_id,
+                receiver_id,
+                content,
+                created_at
+            `)
+            .or(
+                `sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`
+            )
+            .order("created_at", {
+                ascending: false
+            });
+
+
+    if (error) {
+
+        console.error(
+            "CONVERSATION ERROR:",
+            error
+        );
+
+        list.innerHTML =
+            '<div style="padding:15px;color:#777;">Could not load messages.</div>';
+
+        return;
+
+    }
+
+
+    const conversations =
+        new Map();
+
+
+    for (const message of messages || []) {
+
+        const otherUser =
+            message.sender_id === currentUser.id
+                ? message.receiver_id
+                : message.sender_id;
+
+
+        if (!conversations.has(otherUser)) {
+
+            conversations.set(
+                otherUser,
+                message
+            );
+
+        }
+
+    }
+
+
+    if (conversations.size === 0) {
+
+        list.innerHTML =
+            '<div style="padding:15px;color:#777;">No conversations yet.</div>';
+
+        return;
+
+    }
+
+
+    const userIds =
+        [...conversations.keys()];
+
+
+    const { data: profiles, error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .select(`
+                id,
+                username,
+                display_name
+            `)
+            .in("id", userIds);
+
+
+    if (profileError) {
+
+        console.error(
+            "PROFILE ERROR:",
+            profileError
+        );
+
+        return;
+
+    }
+
+
+    const profileMap =
+        new Map();
+
+
+    for (const profile of profiles || []) {
+
+        profileMap.set(
+            profile.id,
+            profile
+        );
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    conversations.forEach(
+        (message, userId) => {
+
+            const profile =
+                profileMap.get(userId);
+
+
+            if (!profile) {
+                return;
+            }
+
+
+            const link =
+                document.createElement("a");
+
+
+            link.className =
+                "conversation";
+
+
+            if (userId === currentOtherUser) {
+
+                link.classList.add("active");
+
+            }
+
+
+            link.href =
+                "messages.html?user=" +
+                encodeURIComponent(userId);
+
+
+            const name =
+                profile.display_name ||
+                profile.username ||
+                "Unknown user";
+
+
+            link.innerHTML = `
+
+                <div class="conversation-name">
+                    ${escapeHtml(name)}
+                </div>
+
+                <div class="conversation-preview">
+                    ${escapeHtml(message.content)}
+                </div>
+
+            `;
+
+
+            list.appendChild(link);
+
+        }
+    );
+
+}
+
+
+/* --------------------------------
+   LOAD PROFILE
+-------------------------------- */
+
+
+async function loadOtherProfile() {
+
+    if (!currentOtherUser) {
+        return false;
+    }
+
+
+    const { data: profile, error } =
+        await supabaseClient
+            .from("profiles")
+            .select(`
+                id,
+                username,
+                display_name
+            `)
+            .eq("id", currentOtherUser)
+            .single();
+
+
+    if (error || !profile) {
+
+        console.error(
+            "OTHER PROFILE ERROR:",
+            error
+        );
+
+        document.getElementById(
+            "private-chat-header"
+        ).innerHTML = `
+            <div class="private-chat-name">
+                User not found
+            </div>
+        `;
+
+        return false;
+
+    }
+
+
+    currentProfile =
+        profile;
+
+
+    const name =
+        profile.display_name ||
+        profile.username ||
+        "Unknown user";
+
+
+    document.getElementById(
+        "private-chat-header"
+    ).innerHTML = `
+
+        <div class="private-chat-name">
+
+            <a href="profile.html?id=${encodeURIComponent(profile.id)}">
+
+                ${escapeHtml(name)}
+
+            </a>
+
+        </div>
+
+        <div class="private-chat-username">
+
+            @${escapeHtml(profile.username)}
+
+        </div>
+
+    `;
+
+
+    document.getElementById(
+        "message-input"
+    ).disabled = false;
+
+
+    document.getElementById(
+        "send-button"
+    ).disabled = false;
+
+
+    return true;
+
+}
+
+
+/* --------------------------------
+   LOAD PRIVATE MESSAGES
+-------------------------------- */
+
+
+async function loadPrivateMessages() {
+    const box =
+        document.getElementById(
+            "private-chat-box"
+        );
+
+
+    if (!currentOtherUser) {
+        return;
+    }
+
+
+    const { data: messages, error } =
+        await supabaseClient
+            .from("private_messages")
+            .select(`
+                id,
+                sender_id,
+                receiver_id,
+                content,
+                created_at
+            `)
+            .or(
+                `and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentOtherUser}),and(sender_id.eq.${currentOtherUser},receiver_id.eq.${currentUser.id})`
+            )
+            .gte(
+                "created_at",
+                new Date(
+                    Date.now() -
+                    24 * 60 * 60 * 1000
+                ).toISOString()
+            )
+            .order("created_at", {
+                ascending: true
+            });
+
+
+    if (error) {
+
+        console.error(
+            "PRIVATE MESSAGE ERROR:",
+            error
+        );
+
+        box.innerHTML =
+            '<div class="empty-chat">Could not load messages.</div>';
+
+        return;
+
+    }
+
+
+    box.innerHTML = "";
+
+
+    if (!messages || messages.length === 0) {
+
+        box.innerHTML = `
+
+            <div class="empty-chat">
+
+                No messages yet.<br>
+                Say hello! 🐱
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    messages.forEach(
+        renderPrivateMessage
+    );
+
+
+    scrollToBottom();
+
+}
+
+
+/* --------------------------------
+   RENDER MESSAGE
+-------------------------------- */
+
+
+function renderPrivateMessage(message) {
+
+    const box =
+        document.getElementById(
+            "private-chat-box"
+        );
+
+
+    const wrapper =
+        document.createElement("div");
+
+
+    wrapper.className =
+        "private-message";
+
+
+    const isMine =
+        message.sender_id ===
+        currentUser.id;
+
+
+    const author =
+        isMine
+            ? "You"
+            : (
+                currentProfile?.display_name ||
+                currentProfile?.username ||
+                "User"
+            );
+
+
+    const time =
+        new Date(
+            message.created_at
+        ).toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+
+    wrapper.innerHTML = `
+
+        <span class="private-message-author">
+
+            ${escapeHtml(author)}
+
+        </span>
+
+        <span class="private-message-time">
+
+            ${time}
+
+        </span>
+
+        <div class="private-message-content">
+
+            ${escapeHtml(message.content)}
+
+        </div>
+
+    `;
+
+
+    box.appendChild(wrapper);
+
+}
+
+
+/* --------------------------------
+   SEND MESSAGE
+-------------------------------- */
+
+
+document
+    .getElementById("message-form")
+    .addEventListener(
+        "submit",
+        async (event) => {
+
+            event.preventDefault();
+
+
+            if (!currentOtherUser) {
+                return;
+            }
+
+
+            const input =
+                document.getElementById(
+                    "message-input"
+                );
+
+
+            const sendButton =
+                document.getElementById(
+                    "send-button"
+                );
+
+
+            const content =
+                input.value.trim();
+
+
+            if (!content) {
+                return;
+            }
+
+
+            sendButton.disabled = true;
+
+
+            const { error } =
+                await supabaseClient
+                    .from("private_messages")
+                    .insert({
+
+                        sender_id:
+                            currentUser.id,
+
+                        receiver_id:
+                            currentOtherUser,
+
+                        content:
+                            content
+
+                    });
+
+
+            if (error) {
+
+                console.error(
+                    "SEND PRIVATE MESSAGE ERROR:",
+                    error
+                );
+
+                alert(
+                    "Could not send message."
+                );
+
+                sendButton.disabled = false;
+
+                return;
+
+            }
+
+
+            input.value = "";
+
+            sendButton.disabled = false;
+
+            input.focus();
+
+        }
+    );
+
+
+/* --------------------------------
+   REALTIME
+-------------------------------- */
+
+
+function subscribeToPrivateMessages() {
+
+    if (!currentOtherUser) {
+        return;
+    }
+
+
+    if (realtimeChannel) {
+
+        supabaseClient
+            .removeChannel(
+                realtimeChannel
+            );
+
+    }
+
+
+    realtimeChannel =
+        supabaseClient
+            .channel(
+                "private-messages-" +
+                currentUser.id +
+                "-" +
+                currentOtherUser
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "private_messages",
+                    filter:
+                        `receiver_id=eq.${currentUser.id}`
+                },
+                payload => {
+
+                    const message =
+                        payload.new;
+
+
+                    if (
+                        message.sender_id ===
+                        currentOtherUser
+                    ) {
+
+                        renderPrivateMessage(
+                            message
+                        );
+
+                        scrollToBottom();
+
+                    }
+
+                    loadConversations();
+
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "private_messages",
+                    filter:
+                        `sender_id=eq.${currentUser.id}`
+                },
+                payload => {
+
+                    const message =
+                        payload.new;
+
+
+                    if (
+                        message.receiver_id ===
+                        currentOtherUser
+                    ) {
+
+                        renderPrivateMessage(
+                            message
+                        );
+
+                        scrollToBottom();
+
+                    }
+
+                    loadConversations();
+
+                }
+            )
+            .subscribe();
+
+}
+
+
+/* --------------------------------
+   START
+-------------------------------- */
+
+
+async function start() {
+
+    const loggedIn =
+        await loadSession();
+
+
+    if (!loggedIn) {
+        return;
+    }
+
+
+    currentOtherUser =
+        getUserFromURL();
+
+
+    await loadConversations();
+
+
+    if (!currentOtherUser) {
+        return;
+    }
+
+
+    const profileLoaded =
+        await loadOtherProfile();
+
+
+    if (!profileLoaded) {
+        return;
+    }
+
+
+    await loadPrivateMessages();
+
+
+    subscribeToPrivateMessages();
+
+}
+
+
+start();
+
+</script>
+
+</body>
+
+</html>
+
