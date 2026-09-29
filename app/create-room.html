@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TheChatCat - Create Room</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+
+    <style>
+
+        .create-room-container {
+            max-width: 650px;
+            margin: 40px auto;
+        }
+
+        .create-room-box {
+            background: #f5f5f5;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            padding: 25px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+        .create-room-box h1 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .slug-preview {
+            margin-top: 5px;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .create-button {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #1d5fa7;
+            border-radius: 4px;
+            background: linear-gradient(#6eb5f7, #2878c8);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .create-button:hover {
+            background: linear-gradient(#82c1fa, #3688d5);
+        }
+
+        .create-button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #room-message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .back-link {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <header>
+
+        <div class="logo">
+            TheChatCat
+        </div>
+
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="settings.html">Settings</a>
+            <a href="../index.html">Exit</a>
+        </nav>
+
+    </header>
+
+
+    <main class="app-container">
+
+        <aside class="sidebar">
+
+            <h3>Rooms</h3>
+
+            <a href="index.html">
+                Room list
+            </a>
+
+            <a href="create-room.html">
+                + Create room
+            </a>
+
+            <h3>Private</h3>
+
+            <a href="messages.html">
+                Messages
+            </a>
+
+        </aside>
+
+
+        <section class="welcome">
+
+            <div class="create-room-container">
+
+                <div class="create-room-box">
+
+                    <h1>Create a room</h1>
+
+                    <p>
+                        Create your own public chat room on TheChatCat.
+                    </p>
+
+
+                    <form id="create-room-form">
+
+                        <div class="form-group">
+
+                            <label for="room-name">
+                                Room name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="room-name"
+                                maxlength="50"
+                                required
+                                autocomplete="off"
+                                placeholder="My awesome room"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="room-slug">
+                                Room address
+                            </label>
+
+                            <input
+                                type="text"
+                                id="room-slug"
+                                maxlength="50"
+                                required
+                                autocomplete="off"
+                                placeholder="my-awesome-room"
+                                pattern="[a-z0-9-]+"
+                            >
+
+                            <div class="slug-preview">
+                                Only lowercase letters, numbers and hyphens.
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="room-description">
+                                Description
+                            </label>
+
+                            <textarea
+                                id="room-description"
+                                maxlength="300"
+                                placeholder="What is this room about?"
+                            ></textarea>
+
+                        </div>
+
+
+                        <div class="form-group checkbox-group">
+
+                            <input
+                                type="checkbox"
+                                id="private-room"
+                            >
+
+                            <label for="private-room">
+                                Private room
+                            </label>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="create-button"
+                            id="create-button"
+                        >
+                            Create room
+                        </button>
+
+                    </form>
+
+
+                    <div id="room-message"></div>
+
+
+                    <div class="back-link">
+
+                        <a href="index.html">
+                            ← Back to rooms
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <p>
+            © 2012-2026 TheChatCat
+        </p>
+
+    </footer>
+
+
+    <script>
+
+        let currentUser = null;
+
+
+        async function checkSession() {
+
+            const {
+                data: { session }
+            } = await supabaseClient.auth.getSession();
+
+
+            if (!session) {
+
+                window.location.href =
+                    "login.html";
+
+                return false;
+            }
+
+
+            currentUser =
+                session.user;
+
+            return true;
+        }
+
+
+        function createSlug(text) {
+
+            return text
+                .toLowerCase()
+                .trim()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "")
+                .slice(0, 50);
+        }
+
+
+        const nameInput =
+            document.getElementById("room-name");
+
+        const slugInput =
+            document.getElementById("room-slug");
+
+
+        nameInput.addEventListener(
+            "input",
+            () => {
+
+                if (!slugInput.dataset.edited) {
+
+                    slugInput.value =
+                        createSlug(nameInput.value);
+
+                }
+
+            }
+        );
+
+
+        slugInput.addEventListener(
+            "input",
+            () => {
+
+                slugInput.dataset.edited =
+                    "true";
+
+                slugInput.value =
+                    slugInput.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9-]/g, "");
+
+            }
+        );
+
+
+        document
+            .getElementById("create-room-form")
+            .addEventListener(
+                "submit",
+                async (event) => {
+
+                    event.preventDefault();
+
+
+                    const button =
+                        document.getElementById(
+                            "create-button"
+                        );
+
+                    const message =
+                        document.getElementById(
+                            "room-message"
+                        );
+
+
+                    const name =
+                        nameInput.value.trim();
+
+                    const slug =
+                        slugInput.value.trim();
+
+                    const description =
+                        document.getElementById(
+                            "room-description"
+                        ).value.trim();
+
+                    const isPrivate =
+                        document.getElementById(
+                            "private-room"
+                        ).checked;
+
+
+                    if (!name || !slug) {
+
+                        message.textContent =
+                            "Please fill in the required fields.";
+
+                        return;
+                    }
+
+
+                    button.disabled = true;
+
+                    button.textContent =
+                        "Creating...";
+
+                    message.textContent = "";
+
+
+                    const {
+                        data: room,
+                        error
+                    } = await supabaseClient
+
+                        .from("rooms")
+
+                        .insert({
+
+                            name: name,
+
+                            slug: slug,
+
+                            description: description,
+
+                            owner_id:
+                                currentUser.id,
+
+                            is_private:
+                                isPrivate
+
+                        })
+
+                        .select()
+                        .single();
+
+
+                    if (error) {
+
+                        console.error(
+                            "CREATE ROOM ERROR:",
+                            error
+                        );
+
+
+                        if (
+                            error.code ===
+                            "23505"
+                        ) {
+
+                            message.textContent =
+                                "That room address is already in use.";
+
+                        } else {
+
+                            message.textContent =
+                                "Could not create room.";
+
+                        }
+
+
+                        button.disabled =
+                            false;
+
+                        button.textContent =
+                            "Create room";
+
+                        return;
+                    }
+
+
+                    message.textContent =
+                        "Room created successfully!";
+
+
+                    window.location.href =
+                        "room.html?room=" +
+                        encodeURIComponent(
+                            room.id
+                        );
+
+                }
+            );
+
+
+        checkSession();
+
+    </script>
+
+</body>
+
+</html>

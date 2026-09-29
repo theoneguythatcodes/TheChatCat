@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>TheChatCat — Room Info</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+
+    <style>
+        .room-info-container {
+            width: 700px;
+            max-width: 92%;
+            margin: 40px auto;
+        }
+
+        .room-info-box {
+            background: #fff;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            box-shadow: 0 2px 7px rgba(0, 0, 0, 0.18);
+        }
+
+        .room-info-header {
+            padding: 18px 22px;
+
+            background:
+                linear-gradient(
+                    #f8f8f8,
+                    #e5e5e5
+                );
+
+            border-bottom: 1px solid #c7c7c7;
+        }
+
+        .room-info-header h1 {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        .room-info-header p {
+            margin: 6px 0 0;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .room-info-body {
+            padding: 24px;
+        }
+
+        .info-section {
+            margin-bottom: 28px;
+        }
+
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-section h2 {
+            margin: 0 0 12px;
+
+            padding-bottom: 7px;
+
+            border-bottom: 1px solid #ddd;
+
+            color: #444;
+            font-size: 16px;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 10px;
+
+            padding: 7px 0;
+
+            font-size: 13px;
+        }
+
+        .info-label {
+            width: 120px;
+
+            color: #777;
+            font-weight: bold;
+        }
+
+        .info-value {
+            color: #333;
+            overflow-wrap: anywhere;
+        }
+
+        .members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .member {
+            display: flex;
+            align-items: center;
+
+            padding: 8px;
+
+            border: 1px solid #ddd;
+            border-radius: 3px;
+
+            background: #fafafa;
+
+            text-decoration: none;
+        }
+
+        .member:hover {
+            background: #f2f6fa;
+        }
+
+        .member-avatar {
+            width: 34px;
+            height: 34px;
+
+            margin-right: 10px;
+
+            border: 1px solid #bbb;
+            border-radius: 3px;
+
+            object-fit: cover;
+
+            background: #eee;
+        }
+
+        .member-details {
+            min-width: 0;
+        }
+
+        .member-name {
+            color: #1769aa;
+            font-size: 13px;
+            font-weight: bold;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .member-role {
+            margin-top: 2px;
+
+            color: #888;
+            font-size: 10px;
+        }
+
+        .empty-members {
+            color: #777;
+            font-size: 12px;
+        }
+
+        .status-message {
+            padding: 12px;
+
+            border: 1px solid #d6aaaa;
+            border-radius: 3px;
+
+            background: #fff2f2;
+            color: #863838;
+
+            font-size: 12px;
+        }
+
+        .actions {
+            margin-top: 24px;
+            padding-top: 18px;
+
+            border-top: 1px solid #ddd;
+
+            text-align: right;
+        }
+
+        .button {
+            display: inline-block;
+
+            padding: 8px 16px;
+
+            border: 1px solid #1c6095;
+            border-radius: 3px;
+
+            background:
+                linear-gradient(
+                    #66a9df,
+                    #2878bd
+                );
+
+            color: #fff;
+
+            font-size: 13px;
+            font-weight: bold;
+
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background:
+                linear-gradient(
+                    #76b5e6,
+                    #347fc0
+                );
+        }
+
+        .button-secondary {
+            margin-left: 6px;
+
+            border-color: #aaa;
+
+            background:
+                linear-gradient(
+                    #fff,
+                    #e2e2e2
+                );
+
+            color: #444;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        TheChatCat
+    </div>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="profile.html">Profile</a>
+        <a href="settings.html">Settings</a>
+        <a href="../index.html">Exit</a>
+    </nav>
+
+</header>
+
+
+<main class="room-info-container">
+
+    <div class="room-info-box">
+
+        <div class="room-info-header">
+
+            <h1 id="room-name">
+                Loading room...
+            </h1> <br>
+
+            <p id="room-description">
+                Loading room information...
+            </p>
+
+        </div>
+
+
+        <div class="room-info-body">
+
+            <div
+                id="error-message"
+                class="status-message hidden"
+            ></div>
+
+
+            <section class="info-section">
+
+                <h2>Room information</h2>
+
+                <div class="info-row">
+                    <div class="info-label">
+                        Identifier
+                    </div>
+
+                    <div
+                        id="room-slug"
+                        class="info-value"
+                    >
+                        —
+                    </div>
+                </div>
+
+
+                <div class="info-row">
+                    <div class="info-label">
+                        Type
+                    </div>
+
+                    <div
+                        id="room-type"
+                        class="info-value"
+                    >
+                        —
+                    </div>
+                </div>
+
+
+                <div class="info-row">
+                    <div class="info-label">
+                        Created
+                    </div>
+
+                    <div
+                        id="room-created"
+                        class="info-value"
+                    >
+                        —
+                    </div>
+                </div>
+
+            </section>
+
+
+            <section class="info-section">
+
+                <h2>
+                    Members
+                    (<span id="member-count">0</span>)
+                </h2>
+
+                <div
+                    id="members-list"
+                    class="members-list"
+                >
+                    <div class="empty-members">
+                        Loading members...
+                    </div>
+                </div>
+
+            </section>
+
+
+            <div class="actions">
+
+                <a
+                    id="settings-button"
+                    href="#"
+                    class="button hidden"
+                >
+                    Room Settings
+                </a>
+
+                <a
+                    id="back-button"
+                    href="#"
+                    class="button button-secondary"
+                >
+                    Back
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<script>
+
+    let currentUser = null;
+    let roomId = null;
+    let roomData = null;
+
+
+    /*
+     * -----------------------------------------
+     * URL
+     * -----------------------------------------
+     */
+
+    function getRoomId() {
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        return params.get("room");
+    }
+
+
+    /*
+     * -----------------------------------------
+     * Session
+     * -----------------------------------------
+     */
+
+    async function loadSession() {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.auth.getSession();
+
+        if (error) {
+
+            console.error(
+                "SESSION ERROR:",
+                error
+            );
+
+            return null;
+        }
+
+        return data.session
+            ? data.session.user
+            : null;
+    }
+
+
+    /*
+     * -----------------------------------------
+     * Load room
+     * -----------------------------------------
+     */
+
+            async function loadRoom() {
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabaseClient
+                        .from("rooms")
+                        .select(`
+                            id,
+                            name,
+                            slug,
+                            description,
+                            is_private,
+                            owner_id,
+                            created_at
+                        `)
+                        .eq("id", roomId)
+                        .single();
+
+
+                if (error || !data) {
+
+                    console.error(
+                        "ROOM INFO ERROR:",
+                        error
+                    );
+
+                    showError(
+                        "This room does not exist or you do not have access to it."
+                    );
+
+                    return false;
+                }
+
+
+                roomData = data;
+
+
+                document
+                    .getElementById("room-name")
+                    .textContent =
+                    data.name || "Unnamed room";
+
+
+                document
+                    .getElementById("room-description")
+                    .textContent =
+                    data.description ||
+                    "No description was provided.";
+
+
+                document
+                    .getElementById("room-slug")
+                    .textContent =
+                    data.slug || "—";
+
+
+                document
+                    .getElementById("room-type")
+                    .textContent =
+                    data.is_private
+                        ? "Private"
+                        : "Public";
+
+
+                document
+                    .getElementById("room-created")
+                    .textContent =
+                    data.created_at
+                        ? new Date(
+                            data.created_at
+                        ).toLocaleString()
+                        : "Unknown";
+
+
+                if (
+                    currentUser &&
+                    data.owner_id === currentUser.id
+                ) {
+
+                    const settingsButton =
+                        document.getElementById(
+                            "settings-button"
+                        );
+
+                    settingsButton.href =
+                        "room-settings.html?room=" +
+                        encodeURIComponent(data.id);
+
+                    settingsButton.classList.remove(
+                        "hidden"
+                    );
+                }
+
+
+                return true;
+            }
+
+
+            /*
+            * -----------------------------------------
+            * Load members
+            * -----------------------------------------
+            */
+
+
+
+        async function loadMembers() {
+
+            const list =
+                document.getElementById("members-list");
+
+            /*
+            * Obtener miembros explícitos.
+            */
+
+            const {
+                data: members,
+                error
+            } =
+                await supabaseClient
+                    .from("room_members")
+                    .select("user_id")
+                    .eq("room_id", roomId);
+
+
+            if (error) {
+
+                console.error(
+                    "MEMBERS ERROR:",
+                    error
+                );
+
+                list.innerHTML =
+                    '<div class="empty-members">' +
+                    'Could not load members.' +
+                    '</div>';
+
+                return;
+            }
+
+
+            /*
+            * Crear lista de IDs.
+            *
+            * El owner siempre se añade.
+            */
+
+            const userIds = [];
+
+            if (roomData.owner_id) {
+
+                userIds.push(
+                    roomData.owner_id
+                );
+            }
+
+
+            (members || []).forEach(member => {
+
+                if (
+                    member.user_id &&
+                    !userIds.includes(
+                        member.user_id
+                    )
+                ) {
+
+                    userIds.push(
+                        member.user_id
+                    );
+                }
+            });
+
+
+            if (userIds.length === 0) {
+
+                list.innerHTML =
+                    '<div class="empty-members">' +
+                    'No members found.' +
+                    '</div>';
+
+                document
+                    .getElementById("member-count")
+                    .textContent = "0";
+
+                return;
+            }
+
+
+            /*
+            * Obtener perfiles.
+            */
+
+            const {
+                data: profiles,
+                error: profileError
+            } =
+                await supabaseClient
+                    .from("profiles")
+                    .select(`
+                        id,
+                        display_name,
+                        avatar_url
+                    `)
+                    .in("id", userIds);
+
+
+            if (profileError) {
+
+                console.error(
+                    "PROFILE LOAD ERROR:",
+                    profileError
+                );
+
+                list.innerHTML =
+                    '<div class="empty-members">' +
+                    'Could not load member profiles.' +
+                    '</div>';
+
+                return;
+            }
+
+
+            const profileMap =
+                new Map(
+                    (profiles || []).map(
+                        profile => [
+                            profile.id,
+                            profile
+                        ]
+                    )
+                );
+
+
+            list.innerHTML = "";
+
+
+            /*
+            * Renderizar miembros.
+            */
+
+            userIds.forEach(userId => {
+
+                const profile =
+                    profileMap.get(userId);
+
+
+                if (!profile) {
+                    return;
+                }
+
+
+                const member =
+                    document.createElement("a");
+
+                member.className =
+                    "member";
+
+                member.href =
+                    "profile.html?id=" +
+                    encodeURIComponent(
+                        profile.id
+                    );
+
+
+                /*
+                * Avatar
+                */
+
+                const avatar =
+                    document.createElement("img");
+
+                avatar.className =
+                    "member-avatar";
+
+                avatar.src =
+                    profile.avatar_url ||
+                    "../assets/img/default-avatar.png";
+
+                avatar.alt =
+                    profile.display_name ||
+                    "User";
+
+
+                /*
+                * Datos
+                */
+
+                const details =
+                    document.createElement("div");
+
+                details.className =
+                    "member-details";
+
+
+                const name =
+                    document.createElement("div");
+
+                name.className =
+                    "member-name";
+
+                name.textContent =
+                    profile.display_name ||
+                    "Unnamed user";
+
+
+                const role =
+                    document.createElement("div");
+
+                role.className =
+                    "member-role";
+
+
+                if (
+                    roomData.owner_id ===
+                    profile.id
+                ) {
+
+                    role.textContent =
+                        "Owner";
+
+                } else {
+
+                    role.textContent =
+                        "Member";
+                }
+
+
+                details.appendChild(name);
+                details.appendChild(role);
+
+                member.appendChild(avatar);
+                member.appendChild(details);
+
+                list.appendChild(member);
+            });
+
+
+            /*
+            * Número real de personas mostradas.
+            */
+
+            document
+                .getElementById("member-count")
+                .textContent =
+                userIds.filter(
+                    id => profileMap.has(id)
+                ).length;
+        }
+
+    /*
+     * -----------------------------------------
+     * Error
+     * -----------------------------------------
+     */
+
+    function showError(message) {
+
+        document
+            .getElementById("room-name")
+            .textContent =
+            "Room unavailable";
+
+
+        document
+            .getElementById("room-description")
+            .textContent =
+            "";
+
+
+        const errorElement =
+            document.getElementById(
+                "error-message"
+            );
+
+        errorElement.textContent =
+            message;
+
+        errorElement.classList.remove(
+            "hidden"
+        );
+
+
+        document
+            .getElementById("members-list")
+            .innerHTML = "";
+
+
+        document
+            .getElementById("settings-button")
+            .classList.add("hidden");
+    }
+
+
+    /*
+     * -----------------------------------------
+     * Back
+     * -----------------------------------------
+     */
+
+    document
+        .getElementById("back-button")
+        .addEventListener(
+            "click",
+            function(event) {
+
+                event.preventDefault();
+
+                if (window.history.length > 1) {
+
+                    window.history.back();
+
+                } else {
+
+                    window.location.href =
+                        "index.html";
+                }
+            }
+        );
+
+
+    /*
+     * -----------------------------------------
+     * Init
+     * -----------------------------------------
+     */
+
+    async function init() {
+
+        roomId = getRoomId();
+
+
+        if (!roomId) {
+
+            showError(
+                "No room was specified."
+            );
+
+            return;
+        }
+
+
+        currentUser =
+            await loadSession();
+
+
+        const roomLoaded =
+            await loadRoom();
+
+
+        if (!roomLoaded) {
+            return;
+        }
+
+
+        await loadMembers();
+    }
+
+
+    init();
+
+</script>
+
+</body>
+</html>

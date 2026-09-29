@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html lang="es">
+    <head>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>TheChatCat</title>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="js/supabase.js"></script>
+
+        <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="../css/app.css">
+
+    </head>
+
+    <body>
+
+        <header>
+
+            <div class="logo">
+                TheChatCat
+            </div>
+
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="profile.html">Profile</a>
+                <a href="settings.html">Settings</a>
+                <a href="../index.html">Exit</a>
+            </nav>
+
+        </header>
+
+
+        <main class="app-container">
+
+
+            <section class="welcome">
+
+                <h1>Welcome to TheChatCat!</h1>
+
+                <p>
+                    Choose a room to start chatting.
+                </p>
+
+                <div class="welcome-box">
+
+                    <strong>Global</strong>
+
+                    <p>
+                        The main global chat.
+                    </p>
+
+                    <a class="button" href="room.html?room=029604ab-5552-439f-9c59-06c2b0f7afa4">
+                        Enter Global
+                    </a>
+
+                    
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <footer>
+
+            <p>
+                © 2012-2026 TheChatCat
+            </p>
+
+        </footer>
+
+
+
+        <script>
+
+            async function handleRoomIdentifier() {
+
+                const path = window.location.pathname;
+
+                /*
+                * Detectar:
+                *
+                * /app/global
+                * /app/random
+                * /app/gaming
+                *
+                */
+
+                const appIndex = path.indexOf("/app/");
+
+                if (appIndex === -1) {
+                    return false;
+                }
+
+
+                const identifier = path
+                    .substring(appIndex + 5)
+                    .split("/")[0]
+                    .trim();
+
+
+                /*
+                * Estas son páginas reales dentro de /app/
+                */
+
+                const appPages = [
+                    "index.html",
+                    "login.html",
+                    "signup.html",
+                    "room.html",
+                    "profile.html",
+                    "messages.html",
+                    "settings.html",
+                    "create-room.html",
+                    "create-invite.html",
+                    "room-directory.html"
+                ];
+
+
+                /*
+                * Si estamos entrando a una página normal,
+                * no tratarla como identificador de sala.
+                */
+
+                if (
+                    !identifier ||
+                    appPages.includes(identifier) ||
+                    identifier.includes(".")
+                ) {
+                    return false;
+                }
+
+
+                /*
+                * Buscar el identificador como slug.
+                *
+                * Ejemplo:
+                *
+                * /app/global
+                *
+                * busca:
+                *
+                * rooms.slug = "global"
+                */
+
+                const {
+                    data: room,
+                    error
+                } = await supabaseClient
+                    .from("rooms")
+                    .select("id,name,slug")
+                    .eq("slug", identifier)
+                    .single();
+
+
+                if (error || !room) {
+
+                    console.error(
+                        "ROOM IDENTIFIER ERROR:",
+                        error
+                    );
+
+                    return false;
+                }
+
+
+                /*
+                * Sala encontrada.
+                *
+                * Redirigir utilizando su UUID.
+                */
+
+                window.location.replace(
+                    "room.html?room=" +
+                    encodeURIComponent(room.id)
+                );
+
+                return true;
+            }
+
+
+            async function checkSession() {
+
+                const {
+                    data: { session },
+                    error
+                } = await supabaseClient.auth.getSession();
+
+
+                if (error) {
+
+                    console.error(
+                        "SESSION ERROR:",
+                        error
+                    );
+
+                    window.location.href = "login.html";
+
+                    return;
+                }
+
+
+                if (!session) {
+
+                    window.location.href = "login.html";
+
+                    return;
+                }
+
+
+                /*
+                * El usuario está autenticado.
+                *
+                * Ahora comprobamos si la URL representa
+                * un identificador de sala.
+                */
+
+                await handleRoomIdentifier();
+            }
+
+
+            checkSession();
+
+        </script>
+
+
+
+    </body>
+</html>

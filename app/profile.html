@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TheChatCat - Profile</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+
+    <style>
+
+        .profile-container {
+            width: 700px;
+            max-width: 92%;
+            margin: 40px auto;
+        }
+
+        .profile-box {
+            background: #f5f5f5;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            padding: 25px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+
+            border: 1px solid #999;
+            border-radius: 5px;
+
+            background: linear-gradient(
+                #eeeeee,
+                #cccccc
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+            flex-shrink: 0;
+
+            font-size: 38px;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .profile-name {
+            margin: 0;
+            color: #333;
+            font-size: 27px;
+        }
+
+        .profile-username {
+            margin-top: 4px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        .profile-section {
+            margin-top: 22px;
+        }
+
+        .profile-section h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #444;
+        }
+
+        .profile-bio {
+            padding: 12px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            color: #444;
+            overflow-wrap: anywhere;
+        }
+
+        .profile-bio a {
+            color: #2878c8;
+        }
+
+        .profile-bio a:hover {
+            text-decoration: underline;
+        }
+        .member-since {
+            color: #777;
+            font-size: 13px;
+        }
+
+        .profile-actions {
+            margin-top: 25px;
+
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .profile-button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border: 1px solid #1d5fa7;
+            border-radius: 4px;
+
+            background: linear-gradient(
+                #6eb5f7,
+                #2878c8
+            );
+
+            color: white;
+
+            font-weight: bold;
+            text-decoration: none;
+
+            cursor: pointer;
+        }
+
+        .profile-button:hover {
+            background: linear-gradient(
+                #82c1fa,
+                #3688d5
+            );
+        }
+
+        .secondary-button {
+            border-color: #999;
+
+            background: linear-gradient(
+                #eeeeee,
+                #cccccc
+            );
+
+            color: #333;
+        }
+
+        .secondary-button:hover {
+            background: linear-gradient(
+                #ffffff,
+                #dddddd
+            );
+        }
+
+        .error {
+            color: #9b2226;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <div class="logo">
+        TheChatCat
+    </div>
+
+    <nav>
+
+        <a href="index.html">
+            Home
+        </a>
+
+        <a href="profile.html">
+            Profile
+        </a>
+
+        <a href="settings.html">
+            Settings
+        </a>
+
+        <a href="../index.html">
+            Exit
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main class="profile-container">
+
+    <div class="profile-box" id="profile-box">
+
+        <p>
+            Loading profile...
+        </p>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    <p>
+        © 2012-2026 TheChatCat
+    </p>
+
+</footer>
+
+
+<script>
+
+
+let currentUser = null;
+
+
+/*
+    Avatar predeterminado.
+
+    Si después creas:
+        assets/default-avatar.png
+
+    este archivo será utilizado automáticamente.
+*/
+
+const DEFAULT_AVATAR =
+    "../assets/img/default-avatar.png";
+
+
+/* --------------------------------
+   HELPERS
+-------------------------------- */
+
+
+function escapeHtml(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+}
+
+
+function getProfileIdFromURL() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    return params.get("id");
+
+}
+
+
+/*
+    Crea el avatar.
+
+    Si el usuario tiene avatar_url:
+        muestra su imagen.
+
+    Si no:
+        muestra el avatar predeterminado.
+*/
+
+function createAvatar(profile) {
+
+    const avatar =
+        document.createElement("div");
+
+    avatar.className =
+        "avatar";
+
+
+    const image =
+        document.createElement("img");
+
+
+    image.alt =
+        "Avatar";
+
+
+    image.src =
+        profile.avatar_url ||
+        DEFAULT_AVATAR;
+
+
+    /*
+        Si la imagen no existe o
+        la URL está rota, usamos
+        el avatar predeterminado.
+    */
+
+    image.onerror = () => {
+
+        image.onerror = null;
+
+        image.src =
+            DEFAULT_AVATAR;
+
+    };
+
+
+    avatar.appendChild(image);
+
+
+    return avatar;
+
+}
+
+
+/* --------------------------------
+   LOAD SESSION
+-------------------------------- */
+
+
+async function loadSession() {
+
+    const {
+        data: { session },
+        error
+    } =
+        await supabaseClient.auth.getSession();
+
+
+    if (error || !session) {
+
+        window.location.href =
+            "login.html";
+
+        return false;
+
+    }
+
+
+    currentUser =
+        session.user;
+
+
+    return true;
+
+}
+
+
+/* --------------------------------
+   LOAD PROFILE
+-------------------------------- */
+
+
+async function loadProfile() {
+
+    const profileBox =
+        document.getElementById(
+            "profile-box"
+        );
+
+
+    const requestedId =
+        getProfileIdFromURL();
+
+
+    /*
+        Sin ?id=:
+        mostramos nuestro perfil.
+
+        Con ?id=:
+        mostramos el perfil público
+        de ese usuario.
+    */
+
+    const profileId =
+        requestedId ||
+        currentUser.id;
+
+
+    const { data: profile, error } =
+        await supabaseClient
+            .from("profiles")
+            .select(`
+                id,
+                username,
+                display_name,
+                bio,
+                avatar_url,
+                created_at
+            `)
+            .eq("id", profileId)
+            .single();
+
+
+    if (error || !profile) {
+
+        console.error(
+            "PROFILE ERROR:",
+            error
+        );
+
+
+        profileBox.innerHTML = `
+
+            <h1>
+                Profile not found
+            </h1>
+
+            <p class="error">
+                This profile does not exist
+                or could not be loaded.
+            </p>
+
+            <div class="profile-actions">
+
+                <a
+                    class="profile-button secondary-button"
+                    href="index.html"
+                >
+                    ← Back
+                </a>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    const isOwnProfile =
+        profile.id === currentUser.id;
+
+
+    const displayName =
+        profile.display_name ||
+        profile.username ||
+        "Unknown user";
+
+
+    const username =
+        profile.username ||
+        "unknown";
+
+
+    const bio =
+        profile.bio ||
+        "This user hasn't written a bio yet.";
+
+
+    const memberSince =
+        new Date(
+            profile.created_at
+        ).toLocaleDateString(
+            [],
+            {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            }
+        );
+
+
+    document.title =
+        "TheChatCat - " +
+        displayName;
+
+
+    /*
+        Crear avatar de forma segura.
+    */
+
+    const avatar =
+        createAvatar(profile);
+
+
+    /*
+        Acciones dependiendo de
+        si es nuestro perfil o
+        el de otra persona.
+    */
+
+    let actionsHTML;
+
+
+    if (isOwnProfile) {
+
+        actionsHTML = `
+
+            <a
+                class="profile-button"
+                href="settings.html"
+            >
+                Edit Profile
+            </a>
+
+        `;
+
+    } else {
+
+        actionsHTML = `
+
+            <a
+                class="profile-button"
+                href="messages.html?user=${encodeURIComponent(profile.id)}"
+            >
+                Send Message
+            </a>
+
+        `;
+
+    }
+
+
+    /*
+        Construimos el perfil.
+
+        El avatar se inserta después
+        como elemento DOM para evitar
+        meter URLs directamente en HTML.
+    */
+
+    profileBox.innerHTML = `
+
+        <div class="profile-header">
+
+            <div id="profile-avatar-container"></div>
+
+            <div>
+
+                <h1 class="profile-name">
+
+                    ${escapeHtml(displayName)}
+                    ${createVerifiedBadge(profile.id)}
+
+                </h1>
+
+                <div class="profile-username">
+
+                    @${escapeHtml(username)}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="profile-section">
+
+            <h2>
+                About
+            </h2>
+
+            <div class="profile-bio">
+
+
+            ${DOMPurify.sanitize(bio, {
+                ALLOWED_TAGS: [
+                    // Texto
+                    "b",
+                    "strong",
+                    "i",
+                    "em",
+                    "u",
+                    "s",
+                    "small",
+                    "mark",
+                    "del",
+                    "ins",
+                    "sub",
+                    "sup",
+
+                    // Párrafos y títulos
+                    "p",
+                    "div",
+                    "span",
+                    "h1",
+                    "h2",
+                    "h3",
+                    "h4",
+                    "h5",
+                    "h6",
+
+                    // Saltos y separadores
+                    "br",
+                    "hr",
+
+                    // Listas
+                    "ul",
+                    "ol",
+                    "li",
+
+                    // Citas / código
+                    "blockquote",
+                    "q",
+                    "cite",
+                    "code",
+                    "pre",
+
+                    // Enlaces
+                    "a",
+
+                    // Imágenes
+                    "img",
+
+                    // Tablas
+                    "table",
+                    "thead",
+                    "tbody",
+                    "tfoot",
+                    "tr",
+                    "th",
+                    "td",
+
+                    // Contenido semántico
+                    "abbr",
+                    "kbd",
+                    "samp",
+                    "var",
+                    "time"
+                ],
+
+                ALLOWED_ATTR: [
+                    // Enlaces
+                    "href",
+                    "target",
+                    "rel",
+                    "download",
+
+                    // Imágenes
+                    "src",
+                    "alt",
+                    "title",
+                    "width",
+                    "height",
+                    "loading",
+
+                    // Estilos
+                    "class",
+                    "style",
+
+                    // Tablas
+                    "colspan",
+                    "rowspan",
+
+                    // Semántica
+                    "datetime",
+
+                    // Accesibilidad
+                    "aria-label",
+                    "aria-hidden",
+                    "role"
+                ]
+            })}
+
+
+
+            </div>
+
+        </div>
+
+
+        <div class="profile-section">
+
+            <div class="member-since">
+
+                Member since
+                ${escapeHtml(memberSince)}
+
+            </div>
+
+        </div>
+
+
+        <div class="profile-actions">
+
+            ${actionsHTML}
+
+            <a
+                class="profile-button secondary-button"
+                href="index.html"
+            >
+                ← Back
+            </a>
+
+        </div>
+
+    `;
+
+
+    /*
+        Insertar avatar.
+    */
+
+    document
+        .getElementById(
+            "profile-avatar-container"
+        )
+        .replaceWith(avatar);
+
+}
+
+
+/* --------------------------------
+   START
+-------------------------------- */
+
+
+async function start() {
+
+    const loggedIn =
+        await loadSession();
+
+
+    if (!loggedIn) {
+        return;
+    }
+
+
+    await loadProfile();
+
+}
+
+
+start();
+
+</script>
+<script>
+const VERIFIED_USERS = [
+    "c2f26c43-47a8-4741-9a3a-8b675f39de02"
+];
+
+function isVerified(userId) {
+    return VERIFIED_USERS.includes(userId);
+}
+
+function createVerifiedBadge(userId) {
+    if (!isVerified(userId)) return "";
+
+    return `
+        <img
+            src="../assets/img/verified-badge.webp"
+            class="verified-badge"
+            alt="Verified"
+            title="Verified account"
+        >
+    `;
+}
+</script>
+
+</body>
+</html>
