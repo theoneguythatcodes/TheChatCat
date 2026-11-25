@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheChatCat — Invitation</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app/js/supabase.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; min-height: 100%; }
+
+        body {
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333;
+            background: linear-gradient(to bottom, #e5edf5 0, #f4f6f8 240px, #f8f8f8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .invite-container {
+            width: 92%;
+            max-width: 480px;
+            background: #ffffff;
+            border: 1px solid #b7c2cc;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+        }
+
+        .invite-header {
+            padding: 16px 20px;
+            background: linear-gradient(to bottom, #f8f8f8, #e7e7e7);
+            border-bottom: 1px solid #c7c7c7;
+        }
+
+        .brand {
+            margin: 0;
+            color: #333;
+            font-size: 19px;
+            font-weight: bold;
+        }
+        .brand span { color: #2878bd; }
+
+        .invite-body { padding: 30px; }
+
+        .page-title {
+            margin: 0 0 8px;
+            color: #333;
+            font-size: 22px;
+            font-weight: normal;
+        }
+
+        .page-subtitle {
+            margin: 0 0 22px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: #f7f9fb;
+            border: 1px solid #cbd4dc;
+            border-radius: 4px;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 6px;
+            border: 1px solid #999;
+            background: linear-gradient(#eee, #ccc);
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info { min-width: 0; }
+        .user-name {
+            margin: 0 0 3px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e5f91;
+        }
+        .user-username {
+            margin: 0;
+            color: #777;
+            font-size: 13px;
+        }
+
+        .status {
+            display: none;
+            margin-top: 18px;
+            padding: 11px 13px;
+            border: 1px solid #c8c8c8;
+            border-radius: 3px;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+        .status.error {
+            background: #fff2f2;
+            border-color: #d6aaaa;
+            color: #863838;
+        }
+        .status.success {
+            background: #f1f8f1;
+            border-color: #b7cfb7;
+            color: #376337;
+        }
+
+        .actions {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #ddd;
+            text-align: right;
+        }
+
+        .button {
+            display: inline-block;
+            min-width: 130px;
+            padding: 9px 18px;
+            border: 1px solid #1c6095;
+            border-radius: 3px;
+            background: linear-gradient(to bottom, #66a9df, #2878bd);
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 2px rgba(0,0,0,0.12);
+            cursor: pointer;
+        }
+        .button:hover {
+            background: linear-gradient(to bottom, #76b5e6, #347fc0);
+        }
+        .button:disabled {
+            opacity: 0.65;
+            cursor: default;
+        }
+        .button-secondary {
+            margin-left: 8px;
+            border-color: #aaa;
+            background: linear-gradient(to bottom, #ffffff, #e2e2e2);
+            color: #444;
+            text-shadow: none;
+        }
+        .button-secondary:hover {
+            background: linear-gradient(to bottom, #ffffff, #ededed);
+        }
+
+        .login-note {
+            margin-top: 14px;
+            color: #777;
+            font-size: 12px;
+            text-align: right;
+        }
+        .login-note a {
+            color: #1769aa;
+            text-decoration: none;
+        }
+        .login-note a:hover { text-decoration: underline; }
+
+        .loading {
+            padding: 40px 0;
+            color: #777;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .hidden { display: none !important; }
+
+        .invite-footer {
+            padding: 13px 20px;
+            border-top: 1px solid #ddd;
+            background: #f5f5f5;
+            color: #888;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        @media (max-width: 500px) {
+            .invite-body { padding: 22px 16px; }
+            .actions { text-align: center; }
+            .button {
+                display: block;
+                width: 100%;
+                margin: 7px 0;
+            }
+            .button-secondary { margin-left: 0; }
+            .login-note { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<main class="invite-container">
+
+    <header class="invite-header">
+        <h1 class="brand">The<span>ChatCat</span></h1>
+    </header>
+
+    <section class="invite-body">
+
+        <!-- Loading -->
+        <div id="loading-state" class="loading">
+            Checking invitation...
+        </div>
+
+        <!-- Valid invite -->
+        <div id="invite-state" class="hidden">
+
+            <h2 class="page-title">Personal Invitation</h2>
+            <p class="page-subtitle">
+                Someone invited you to chat on TheChatCat.
+            </p>
+
+            <div class="user-card">
+                <div class="avatar" id="avatar">🐱</div>
+                <div class="user-info">
+                    <p class="user-name" id="display-name">—</p>
+                    <p class="user-username" id="username">@—</p>
+                </div>
+            </div>
+
+            <div id="status-message" class="status"></div>
+
+            <div class="actions">
+                <button id="chat-button" type="button" class="button">
+                    Start Chat
+                </button>
+                <a href="index.html" class="button button-secondary">Cancel</a>
+            </div>
+
+            <div id="login-note" class="login-note hidden">
+                You need to be signed in to start chatting.<br>
+                <a id="login-link" href="app/login.html">Sign in to TheChatCat</a>
+            </div>
+
+        </div>
+
+        <!-- Error -->
+        <div id="error-state" class="hidden">
+            <div style="padding: 30px 0; text-align: center;">
+                <h2 style="margin: 0 0 10px; font-size: 20px; font-weight: normal; color: #444;">
+                    Invitation Unavailable
+                </h2>
+                <p id="error-message" style="margin: 0 0 20px; color: #666; font-size: 13px; line-height: 1.5;">
+                    This invitation is invalid or has expired.
+                </p>
+                <a href="index.html" class="button">Return to TheChatCat</a>
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="invite-footer">
+        TheChatCat Network
+    </footer>
+
+</main>
+
+<script>
+    let currentUser = null;
+    let targetUserId = null;
+    let inviteCode = null;
+
+    function getCodeFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        // Support both ?c= and ?code=
+        return params.get("c") || params.get("code") || null;
+    }
+
+    function showError(msg) {
+        document.getElementById("loading-state").classList.add("hidden");
+        document.getElementById("invite-state").classList.add("hidden");
+        document.getElementById("error-state").classList.remove("hidden");
+        document.getElementById("error-message").textContent = msg || "This invitation is invalid or has expired.";
+    }
+
+    function showStatus(msg, type) {
+        const el = document.getElementById("status-message");
+        el.textContent = msg;
+        el.className = "status " + type;
+        el.style.display = "block";
+    }
+
+    async function loadSession() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+            console.error("SESSION ERROR:", error);
+            currentUser = null;
+            return;
+        }
+        currentUser = data.session ? data.session.user : null;
+    }
+
+    async function loadInvite() {
+        inviteCode = getCodeFromURL();
+
+        if (!inviteCode) {
+            showError("The invitation link is incomplete or invalid.");
+            return;
+        }
+
+        // Look up the invite by code
+        const { data: invite, error } = await supabaseClient
+            .from("user_invites")
+            .select("id, user_id, code, uses, max_uses, expires_at")
+            .eq("code", inviteCode)
+            .maybeSingle();
+
+        if (error) {
+            console.error("INVITE LOOKUP ERROR:", error);
+            showError("Could not verify this invitation.");
+            return;
+        }
+
+        if (!invite) {
+            showError("This invitation does not exist.");
+            return;
+        }
+
+        // Check expiration
+        if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+            showError("This invitation has expired.");
+            return;
+        }
+
+        // Check max uses
+        if (invite.max_uses !== null && invite.uses >= invite.max_uses) {
+            showError("This invitation has already been used the maximum number of times.");
+            return;
+        }
+
+        targetUserId = invite.user_id;
+
+        // Load the target user's profile
+        const { data: profile, error: profileError } = await supabaseClient
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .eq("id", targetUserId)
+            .single();
+
+        if (profileError || !profile) {
+            console.error("PROFILE ERROR:", profileError);
+            showError("The user for this invitation could not be found.");
+            return;
+        }
+
+        // Fill UI
+        document.getElementById("display-name").textContent =
+            profile.display_name || profile.username || "Unknown user";
+        document.getElementById("username").textContent =
+            "@" + (profile.username || "unknown");
+
+        const avatarEl = document.getElementById("avatar");
+        if (profile.avatar_url) {
+            avatarEl.innerHTML = "";
+            const img = document.createElement("img");
+            img.src = profile.avatar_url;
+            img.alt = "Avatar";
+            img.onerror = () => { avatarEl.textContent = "🐱"; };
+            avatarEl.appendChild(img);
+        }
+
+        document.getElementById("loading-state").classList.add("hidden");
+        document.getElementById("invite-state").classList.remove("hidden");
+
+        updateSessionUI();
+
+        // Increment uses (fire and forget)
+        supabaseClient
+            .from("user_invites")
+            .update({ uses: (invite.uses || 0) + 1 })
+            .eq("id", invite.id)
+            .then(() => {})
+            .catch(err => console.warn("Could not update invite uses:", err));
+    }
+
+    function updateSessionUI() {
+        const chatBtn = document.getElementById("chat-button");
+        const loginNote = document.getElementById("login-note");
+
+        if (!currentUser) {
+            chatBtn.classList.add("hidden");
+            loginNote.classList.remove("hidden");
+
+            // Build login redirect back to this invite
+            const loginLink = document.getElementById("login-link");
+            const returnUrl = "../i.html?c=" + encodeURIComponent(inviteCode);
+            loginLink.href = "app/login.html?redirect=" + encodeURIComponent(returnUrl);
+            return;
+        }
+
+        // Already logged in
+        chatBtn.classList.remove("hidden");
+        loginNote.classList.add("hidden");
+
+        // If the invite is for yourself
+        if (currentUser.id === targetUserId) {
+            chatBtn.textContent = "This is your invite";
+            chatBtn.disabled = true;
+        }
+    }
+
+    document.getElementById("chat-button").addEventListener("click", () => {
+        if (!currentUser || !targetUserId) return;
+
+        if (currentUser.id === targetUserId) {
+            showStatus("You cannot start a chat with yourself.", "error");
+            return;
+        }
+
+        // Go to private messages with this user
+        window.location.href =
+            "app/messages.html?user=" + encodeURIComponent(targetUserId);
+    });
+
+    async function init() {
+        await loadSession();
+        await loadInvite();
+    }
+
+    init();
+</script>
+
+</body>
+</html>
