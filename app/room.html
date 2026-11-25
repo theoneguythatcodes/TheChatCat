@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheChatCat - Room</title>
+    <script src="js/verified.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app.css">
+    <style>
+        .room-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .room-row > a:first-child { flex: 1; }
+        .room-settings-button {
+            margin-left: 6px;
+            padding: 2px 5px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .room-info-button {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 9px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            background: linear-gradient(to bottom, #ffffff, #e4e4e4);
+            color: #444;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .room-info-button:hover {
+            background: linear-gradient(to bottom, #ffffff, #eeeeee);
+        }
+        .room-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .room-title { margin-bottom: 15px; }
+        .room-title h1 { margin-bottom: 5px; }
+        .room-title p { color: #777; }
+
+        .chat-box {
+            background: white;
+            border: 1px solid #aaa;
+            min-height: 450px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .message {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        .message:last-child { border-bottom: none; }
+        .message:hover { background: #fafafa; }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .message-user {
+            font-weight: bold;
+            color: #2874b8;
+            text-decoration: none;
+        }
+        .message-user:hover { text-decoration: underline; }
+        .message-time {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .message-reply-preview {
+            margin: 4px 0 6px 0;
+            padding: 5px 8px;
+            border-left: 3px solid #6eb5f7;
+            background: #f0f7ff;
+            font-size: 12px;
+            color: #555;
+            border-radius: 0 3px 3px 0;
+        }
+        .message-reply-preview .reply-author {
+            font-weight: bold;
+            color: #2874b8;
+        }
+
+        .message-content {
+            margin-top: 4px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message-image {
+            margin-top: 8px;
+            max-width: 320px;
+            max-height: 240px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .message-actions {
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.7;
+        }
+        .message:hover .message-actions { opacity: 1; }
+
+        .reaction-btn, .reply-btn {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 2px 7px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #555;
+        }
+        .reaction-btn:hover, .reply-btn:hover {
+            background: #eef5fc;
+            border-color: #b8d4f0;
+        }
+        .reaction-btn.active {
+            background: #d6ebff;
+            border-color: #6eb5f7;
+        }
+
+        .reactions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .reaction-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 1px 7px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .reaction-chip:hover { background: #e5e5e5; }
+        .reaction-chip.mine {
+            background: #d6ebff;
+            border-color: #6eb5f7;
+        }
+
+        .replying-to-bar {
+            display: none;
+            background: #f0f7ff;
+            border: 1px solid #b8d4f0;
+            border-bottom: none;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #333;
+            border-radius: 4px 4px 0 0;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .replying-to-bar.visible { display: flex; }
+        .replying-to-bar button {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .message-form {
+            display: flex;
+            margin-top: 0;
+        }
+        .message-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #aaa;
+            border-radius: 0 0 0 3px;
+            box-sizing: border-box;
+        }
+        .message-form button {
+            padding: 10px 18px;
+            border: 1px solid #1d5fa7;
+            background: linear-gradient(#6eb5f7, #2878c8);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 0 0 3px 0;
+        }
+        .message-form button:hover {
+            background: linear-gradient(#82c1fa, #3688d5);
+        }
+        .message-form button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #status {
+            margin-top: 8px;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .image-upload-btn {
+            padding: 10px 12px;
+            border: 1px solid #aaa;
+            background: linear-gradient(#f8f8f8, #e0e0e0);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .image-upload-btn:hover {
+            background: linear-gradient(#ffffff, #e8e8e8);
+        }
+        #image-input { display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">TheChatCat</div>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="settings.html">Settings</a>
+            <a href="../index.html">Exit</a>
+        </nav>
+    </header>
+
+    <main class="app-container">
+        <aside class="sidebar">
+            <h3>Rooms</h3>
+            <div id="rooms-list"><p>Loading rooms...</p></div>
+            <a href="create-room.html" class="button" style="color: white;">Create Room</a>
+            <a href="room-directory.html" class="button" style="color: white;">Room Directory</a>
+            <h3>Private</h3>
+            <a href="messages.html">Messages</a>
+        </aside>
+
+        <section class="welcome">
+            <div class="room-container">
+                <div class="room-title">
+                    <h1 id="room-name">Loading room...</h1>
+                    <p id="room-description">Loading...</p>
+                    <a id="room-info-button" class="room-info-button" href="#">Room Info</a>
+                </div>
+
+                <div class="chat-box" id="chat-box">
+                    <p>Loading messages...</p>
+                </div>
+
+                <div class="replying-to-bar" id="replying-to-bar">
+                    <span id="replying-to-text"></span>
+                    <button type="button" id="cancel-reply" title="Cancel reply">×</button>
+                </div>
+
+                <form class="message-form" id="message-form">
+                    <label class="image-upload-btn" for="image-input" title="Attach image">🖼</label>
+                    <input type="file" id="image-input" accept="image/png,image/jpeg,image/webp,image/gif">
+                    <input type="text" id="message-input" placeholder="Write a message..." maxlength="2000" autocomplete="off">
+                    <button type="submit" id="send-button">Send</button>
+                </form>
+
+                <div id="status">Connecting...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2012-2026 TheChatCat</p>
+    </footer>
+
+    <script>
+        let currentUser = null;
+        let currentRoom = null;
+        let realtimeChannel = null;
+        let replyToMessage = null;
+        let messagesCache = new Map();
+        let reactionsCache = new Map();
+
+        const REACTIONS = [
+            { key: "like", emoji: "👍" },
+            { key: "love", emoji: "❤️" },
+            { key: "laugh", emoji: "😂" },
+            { key: "wow", emoji: "😮" },
+            { key: "sad", emoji: "😢" },
+            { key: "angry", emoji: "😡" }
+        ];
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text || "";
+            return div.innerHTML;
+        }
+
+        function scrollToBottom() {
+            const box = document.getElementById("chat-box");
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function loadRooms() {
+            const roomsList = document.getElementById("rooms-list");
+            if (!roomsList) return;
+
+            const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+            if (sessionError || !session) {
+                roomsList.innerHTML = "<p>Please log in.</p>";
+                return;
+            }
+
+            const { data: rooms, error } = await supabaseClient
+                .from("rooms")
+                .select("id, name, slug, description, is_private, owner_id, created_at")
+                .or(`is_private.eq.false,owner_id.eq.${session.user.id}`)
+                .order("created_at", { ascending: true });
+
+            if (error) {
+                console.error("ROOM LOAD ERROR:", error);
+                roomsList.innerHTML = "<p>Could not load rooms.</p>";
+                return;
+            }
+
+            roomsList.innerHTML = "";
+            if (!rooms || rooms.length === 0) {
+                roomsList.innerHTML = "<p>No rooms available.</p>";
+                return;
+            }
+
+            rooms.forEach(room => {
+                const roomRow = document.createElement("div");
+                roomRow.className = "room-row";
+
+                const link = document.createElement("a");
+                link.href = `room.html?room=${encodeURIComponent(room.id)}`;
+                link.textContent = room.name;
+                link.title = room.description || room.name;
+                roomRow.appendChild(link);
+
+                if (room.owner_id === session.user.id) {
+                    const settingsButton = document.createElement("a");
+                    settingsButton.href = `room-settings.html?room=${encodeURIComponent(room.id)}`;
+                    settingsButton.className = "room-settings-button";
+                    settingsButton.textContent = "⚙";
+                    settingsButton.title = "Room Settings";
+                    roomRow.appendChild(settingsButton);
+                }
+
+                roomsList.appendChild(roomRow);
+            });
+        }
+
+        async function loadMessages() {
+            const chatBox = document.getElementById("chat-box");
+
+            const { data: messages, error: messagesError } = await supabaseClient
+                .from("messages")
+                .select(`
+                    id,
+                    room_id,
+                    user_id,
+                    content,
+                    created_at,
+                    reply_to,
+                    image_url
+                `)
+                .eq("room_id", currentRoom)
+                .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+                .order("created_at", { ascending: true });
+
+            if (messagesError) {
+                console.error("MESSAGE LOAD ERROR:", messagesError);
+                chatBox.innerHTML = "<p>Could not load messages.</p>";
+                return;
+            }
+
+            chatBox.innerHTML = "";
+            messagesCache.clear();
+
+            if (!messages || messages.length === 0) {
+                chatBox.innerHTML = "<p>No messages yet. Be the first!</p>";
+                return;
+            }
+
+            const userIds = [...new Set(messages.map(m => m.user_id))];
+            const { data: profiles } = await supabaseClient
+                .from("profiles")
+                .select("id, username, display_name")
+                .in("id", userIds);
+
+            const profileMap = new Map();
+            (profiles || []).forEach(p => profileMap.set(p.id, p));
+
+            const messageIds = messages.map(m => m.id);
+            await loadReactions(messageIds);
+
+            messages.forEach(message => {
+                message.profiles = profileMap.get(message.user_id) || null;
+                messagesCache.set(message.id, message);
+                renderMessage(message);
+            });
+
+            scrollToBottom();
+        }
+
+        async function loadReactions(messageIds) {
+            if (!messageIds.length) return;
+
+            const { data: reactions, error } = await supabaseClient
+                .from("message_reactions")
+                .select("message_id, user_id, reaction")
+                .in("message_id", messageIds);
+
+            if (error) {
+                console.error("REACTIONS LOAD ERROR:", error);
+                return;
+            }
+
+            reactionsCache.clear();
+            (reactions || []).forEach(r => {
+                if (!reactionsCache.has(r.message_id)) {
+                    reactionsCache.set(r.message_id, []);
+                }
+                reactionsCache.get(r.message_id).push(r);
+            });
+        }
+
+        function renderMessage(message) {
+            const chatBox = document.getElementById("chat-box");
+
+            if (chatBox.querySelector("p") && chatBox.children.length === 1) {
+                chatBox.innerHTML = "";
+            }
+
+            const el = document.createElement("div");
+            el.className = "message";
+            el.dataset.messageId = message.id;
+
+            const displayName = message.profiles?.display_name || message.profiles?.username || "Unknown user";
+
+            const time = new Date(message.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+            const header = document.createElement("div");
+            header.className = "message-header";
+
+            const userLink = document.createElement("a");
+            userLink.className = "message-user";
+            userLink.href = `profile.html?id=${encodeURIComponent(message.user_id)}`;
+            userLink.textContent = displayName;
+            header.appendChild(userLink);
+
+            if (typeof createVerifiedBadge === "function") {
+                const badge = createVerifiedBadge(message.user_id);
+                if (badge) header.appendChild(badge);
+            }
+
+            const timeEl = document.createElement("span");
+            timeEl.className = "message-time";
+            timeEl.textContent = time;
+            header.appendChild(timeEl);
+
+            el.appendChild(header);
+
+            if (message.reply_to && messagesCache.has(message.reply_to)) {
+                const parent = messagesCache.get(message.reply_to);
+                const parentName = parent.profiles?.display_name || parent.profiles?.username || "Unknown";
+                const preview = document.createElement("div");
+                preview.className = "message-reply-preview";
+                preview.innerHTML = `<span class="reply-author">${escapeHtml(parentName)}</span>: ${escapeHtml((parent.content || "").slice(0, 80))}${(parent.content || "").length > 80 ? "…" : ""}`;
+                el.appendChild(preview);
+            }
+
+            const contentEl = document.createElement("div");
+            contentEl.className = "message-content";
+            contentEl.textContent = message.content || "";
+            el.appendChild(contentEl);
+
+            if (message.image_url) {
+                const img = document.createElement("img");
+                img.className = "message-image";
+                img.src = message.image_url;
+                img.alt = "Attached image";
+                img.loading = "lazy";
+                img.onclick = () => window.open(message.image_url, "_blank");
+                el.appendChild(img);
+            }
+
+            const reactionsList = document.createElement("div");
+            reactionsList.className = "reactions-list";
+            reactionsList.dataset.messageId = message.id;
+            renderReactionsList(reactionsList, message.id);
+            el.appendChild(reactionsList);
+
+            const actions = document.createElement("div");
+            actions.className = "message-actions";
+
+            REACTIONS.forEach(r => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "reaction-btn";
+                btn.dataset.reaction = r.key;
+                btn.textContent = r.emoji;
+                btn.title = r.key;
+                btn.onclick = () => toggleReaction(message.id, r.key);
+                actions.appendChild(btn);
+            });
+
+            const replyBtn = document.createElement("button");
+            replyBtn.type = "button";
+            replyBtn.className = "reply-btn";
+            replyBtn.textContent = "↩ Reply";
+            replyBtn.onclick = () => setReplyTo(message);
+            actions.appendChild(replyBtn);
+
+            el.appendChild(actions);
+            chatBox.appendChild(el);
+        }
+
+        function renderReactionsList(container, messageId) {
+            container.innerHTML = "";
+            const reactions = reactionsCache.get(messageId) || [];
+            if (!reactions.length) return;
+
+            const groups = {};
+            reactions.forEach(r => {
+                if (!groups[r.reaction]) groups[r.reaction] = [];
+                groups[r.reaction].push(r.user_id);
+            });
+
+            Object.entries(groups).forEach(([key, userIds]) => {
+                const def = REACTIONS.find(r => r.key === key);
+                if (!def) return;
+
+                const chip = document.createElement("span");
+                chip.className = "reaction-chip";
+                if (userIds.includes(currentUser.id)) chip.classList.add("mine");
+                chip.textContent = `${def.emoji} ${userIds.length}`;
+                chip.title = userIds.length + " reaction(s)";
+                chip.onclick = () => toggleReaction(messageId, key);
+                container.appendChild(chip);
+            });
+        }
+
+        async function toggleReaction(messageId, reactionKey) {
+            if (!currentUser) return;
+
+            const existing = (reactionsCache.get(messageId) || [])
+                .find(r => r.user_id === currentUser.id && r.reaction === reactionKey);
+
+            if (existing) {
+                const { error } = await supabaseClient
+                    .from("message_reactions")
+                    .delete()
+                    .eq("message_id", messageId)
+                    .eq("user_id", currentUser.id)
+                    .eq("reaction", reactionKey);
+
+                if (error) {
+                    console.error("REMOVE REACTION ERROR:", error);
+                    return;
+                }
+
+                const list = reactionsCache.get(messageId) || [];
+                reactionsCache.set(messageId, list.filter(r => !(r.user_id === currentUser.id && r.reaction === reactionKey)));
+            } else {
+                const { error } = await supabaseClient
+                    .from("message_reactions")
+                    .insert({
+                        message_id: messageId,
+                        user_id: currentUser.id,
+                        reaction: reactionKey
+                    });
+
+                if (error) {
+                    console.error("ADD REACTION ERROR:", error);
+                    return;
+                }
+
+                if (!reactionsCache.has(messageId)) reactionsCache.set(messageId, []);
+                reactionsCache.get(messageId).push({
+                    message_id: messageId,
+                    user_id: currentUser.id,
+                    reaction: reactionKey
+                });
+            }
+
+            const container = document.querySelector(`.reactions-list[data-message-id="${messageId}"]`);
+            if (container) renderReactionsList(container, messageId);
+        }
+
+        function setReplyTo(message) {
+            replyToMessage = {
+                id: message.id,
+                content: message.content || "",
+                author: message.profiles?.display_name || message.profiles?.username || "Unknown"
+            };
+
+            const bar = document.getElementById("replying-to-bar");
+            const text = document.getElementById("replying-to-text");
+            text.textContent = `Replying to ${replyToMessage.author}: ${(replyToMessage.content || "").slice(0, 60)}${(replyToMessage.content || "").length > 60 ? "…" : ""}`;
+            bar.classList.add("visible");
+            document.getElementById("message-input").focus();
+        }
+
+        function clearReply() {
+            replyToMessage = null;
+            document.getElementById("replying-to-bar").classList.remove("visible");
+        }
+
+        document.getElementById("cancel-reply").addEventListener("click", clearReply);
+
+        let selectedImageFile = null;
+
+        document.getElementById("image-input").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                selectedImageFile = null;
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Image must be smaller than 5 MB.");
+                e.target.value = "";
+                selectedImageFile = null;
+                return;
+            }
+            selectedImageFile = file;
+        });
+
+        async function uploadChatImage(file) {
+            const ext = file.name.split(".").pop().toLowerCase();
+            const path = `${currentUser.id}/${Date.now()}.${ext}`;
+
+            const { error } = await supabaseClient.storage
+                .from("chat-media-glob")
+                .upload(path, file, { upsert: false, contentType: file.type });
+
+            if (error) throw error;
+
+            const { data } = supabaseClient.storage
+                .from("chat-media-glob")
+                .getPublicUrl(path);
+
+            return data.publicUrl;
+        }
+
+        document.getElementById("message-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const input = document.getElementById("message-input");
+            const button = document.getElementById("send-button");
+            const content = input.value.trim();
+
+            if (!content && !selectedImageFile) return;
+            if (!currentUser || !currentRoom) return;
+
+            button.disabled = true;
+            button.textContent = "Sending...";
+
+            try {
+                let imageUrl = null;
+                if (selectedImageFile) {
+                    imageUrl = await uploadChatImage(selectedImageFile);
+                }
+
+                const insertData = {
+                    room_id: currentRoom,
+                    user_id: currentUser.id,
+                    content: content || (imageUrl ? "📷 Image" : "")
+                };
+
+                if (replyToMessage) {
+                    insertData.reply_to = replyToMessage.id;
+                }
+                if (imageUrl) {
+                    insertData.image_url = imageUrl;
+                }
+
+                const { error } = await supabaseClient
+                    .from("messages")
+                    .insert(insertData);
+
+                if (error) throw error;
+
+                input.value = "";
+                selectedImageFile = null;
+                document.getElementById("image-input").value = "";
+                clearReply();
+
+            } catch (err) {
+                console.error("SEND ERROR:", err);
+                alert("Could not send message.");
+            }
+
+            button.disabled = false;
+            button.textContent = "Send";
+        });
+
+        function subscribeToMessages() {
+            if (realtimeChannel) {
+                supabaseClient.removeChannel(realtimeChannel);
+            }
+
+            realtimeChannel = supabaseClient
+                .channel("room-" + currentRoom)
+                .on("postgres_changes", {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "messages",
+                    filter: `room_id=eq.${currentRoom}`
+                }, async (payload) => {
+                    const message = payload.new;
+
+                    const { data: profile } = await supabaseClient
+                        .from("profiles")
+                        .select("id, username, display_name")
+                        .eq("id", message.user_id)
+                        .single();
+
+                    message.profiles = profile || null;
+                    messagesCache.set(message.id, message);
+
+                    renderMessage(message);
+                    scrollToBottom();
+                })
+                .on("postgres_changes", {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "message_reactions"
+                }, (payload) => {
+                    const r = payload.new;
+                    if (!reactionsCache.has(r.message_id)) {
+                        reactionsCache.set(r.message_id, []);
+                    }
+                    const list = reactionsCache.get(r.message_id);
+                    if (!list.some(x => x.user_id === r.user_id && x.reaction === r.reaction)) {
+                        list.push(r);
+                    }
+                    const container = document.querySelector(`.reactions-list[data-message-id="${r.message_id}"]`);
+                    if (container) renderReactionsList(container, r.message_id);
+                })
+                .on("postgres_changes", {
+                    event: "DELETE",
+                    schema: "public",
+                    table: "message_reactions"
+                }, (payload) => {
+                    const r = payload.old;
+                    if (reactionsCache.has(r.message_id)) {
+                        const list = reactionsCache.get(r.message_id).filter(
+                            x => !(x.user_id === r.user_id && x.reaction === r.reaction)
+                        );
+                        reactionsCache.set(r.message_id, list);
+                    }
+                    const container = document.querySelector(`.reactions-list[data-message-id="${r.message_id}"]`);
+                    if (container) renderReactionsList(container, r.message_id);
+                })
+                .subscribe();
+        }
+
+        async function initRoom() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = "login.html";
+                return;
+            }
+            currentUser = session.user;
+
+            const params = new URLSearchParams(window.location.search);
+            currentRoom = params.get("room");
+            if (!currentRoom) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const { data: room, error: roomError } = await supabaseClient
+                .from("rooms")
+                .select("id, name, description, is_private")
+                .eq("id", currentRoom)
+                .single();
+
+            if (roomError || !room) {
+                document.getElementById("room-name").textContent = "Room not found";
+                document.getElementById("room-description").textContent = "This room does not exist.";
+                return;
+            }
+
+            document.getElementById("room-name").textContent = room.name;
+            document.getElementById("room-description").textContent = room.description || "";
+
+            const infoBtn = document.getElementById("room-info-button");
+            if (infoBtn) {
+                infoBtn.href = `room-info.html?room=${encodeURIComponent(currentRoom)}`;
+            }
+
+            await loadMessages();
+            subscribeToMessages();
+            document.getElementById("status").textContent = "Connected.";
+        }
+
+        async function init() {
+            await initRoom();
+            await loadRooms();
+        }
+
+        init();
+    </script>
+</body>
+</html>
