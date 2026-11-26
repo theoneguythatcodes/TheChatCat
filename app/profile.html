@@ -171,6 +171,13 @@
             font-weight: bold;
         }
 
+        .invite-feedback {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #2878c8;
+            font-weight: bold;
+        }
+
     </style>
 
 </head>
@@ -236,15 +243,6 @@
 let currentUser = null;
 
 
-/*
-    Avatar predeterminado.
-
-    Si después creas:
-        assets/default-avatar.png
-
-    este archivo será utilizado automáticamente.
-*/
-
 const DEFAULT_AVATAR =
     "../assets/img/default-avatar.png";
 
@@ -278,16 +276,6 @@ function getProfileIdFromURL() {
 }
 
 
-/*
-    Crea el avatar.
-
-    Si el usuario tiene avatar_url:
-        muestra su imagen.
-
-    Si no:
-        muestra el avatar predeterminado.
-*/
-
 function createAvatar(profile) {
 
     const avatar =
@@ -310,12 +298,6 @@ function createAvatar(profile) {
         DEFAULT_AVATAR;
 
 
-    /*
-        Si la imagen no existe o
-        la URL está rota, usamos
-        el avatar predeterminado.
-    */
-
     image.onerror = () => {
 
         image.onerror = null;
@@ -331,6 +313,108 @@ function createAvatar(profile) {
 
     return avatar;
 
+}
+
+
+function generateCode(length = 10) {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let code = "";
+    for (let i = 0; i < length; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+}
+
+
+/* --------------------------------
+   PERSONAL INVITE LINK
+-------------------------------- */
+
+
+async function getOrCreateInviteCode(userId) {
+
+    // Try to reuse an existing invite for this user
+    const { data: existing, error: existingError } = await supabaseClient
+        .from("user_invites")
+        .select("code")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (existingError) {
+        console.error("INVITE LOOKUP ERROR:", existingError);
+    }
+
+    if (existing && existing.code) {
+        return existing.code;
+    }
+
+    // Create a new one
+    let attempts = 0;
+    while (attempts < 5) {
+        const code = generateCode(10);
+
+        const { data, error } = await supabaseClient
+            .from("user_invites")
+            .insert({
+                user_id: userId,
+                code: code
+            })
+            .select("code")
+            .single();
+
+        if (!error && data) {
+            return data.code;
+        }
+
+        // Collision, try again
+        attempts++;
+    }
+
+    throw new Error("Could not generate invite code");
+}
+
+
+async function copyInviteLink() {
+
+    const btn = document.getElementById("invite-link-btn");
+    const feedback = document.getElementById("invite-feedback");
+
+    if (!btn || !currentUser) return;
+
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+
+    try {
+        const code = await getOrCreateInviteCode(currentUser.id);
+
+        // Build the full URL
+        const base = window.location.origin + window.location.pathname.replace(/\/app\/profile\.html.*/, "");
+        const inviteUrl = base + "/i.html?c=" + encodeURIComponent(code);
+
+        await navigator.clipboard.writeText(inviteUrl);
+
+        if (feedback) {
+            feedback.textContent = "Link copied! " + inviteUrl;
+        }
+
+        btn.textContent = "Copied!";
+
+        setTimeout(() => {
+            btn.textContent = "Copy Invite Link";
+            btn.disabled = false;
+        }, 2000);
+
+    } catch (err) {
+        console.error("INVITE ERROR:", err);
+        if (feedback) {
+            feedback.textContent = "Could not create invite link.";
+            feedback.style.color = "#9b2226";
+        }
+        btn.textContent = "Copy Invite Link";
+        btn.disabled = false;
+    }
 }
 
 
@@ -383,15 +467,6 @@ async function loadProfile() {
     const requestedId =
         getProfileIdFromURL();
 
-
-    /*
-        Sin ?id=:
-        mostramos nuestro perfil.
-
-        Con ?id=:
-        mostramos el perfil público
-        de ese usuario.
-    */
 
     const profileId =
         requestedId ||
@@ -488,19 +563,9 @@ async function loadProfile() {
         displayName;
 
 
-    /*
-        Crear avatar de forma segura.
-    */
-
     const avatar =
         createAvatar(profile);
 
-
-    /*
-        Acciones dependiendo de
-        si es nuestro perfil o
-        el de otra persona.
-    */
 
     let actionsHTML;
 
@@ -515,6 +580,14 @@ async function loadProfile() {
             >
                 Edit Profile
             </a>
+
+            <button
+                type="button"
+                class="profile-button secondary-button"
+                id="invite-link-btn"
+            >
+                Copy Invite Link
+            </button>
 
         `;
 
@@ -533,14 +606,6 @@ async function loadProfile() {
 
     }
 
-
-    /*
-        Construimos el perfil.
-
-        El avatar se inserta después
-        como elemento DOM para evitar
-        meter URLs directamente en HTML.
-    */
 
     profileBox.innerHTML = `
 
@@ -579,100 +644,24 @@ async function loadProfile() {
 
             ${DOMPurify.sanitize(bio, {
                 ALLOWED_TAGS: [
-                    // Texto
-                    "b",
-                    "strong",
-                    "i",
-                    "em",
-                    "u",
-                    "s",
-                    "small",
-                    "mark",
-                    "del",
-                    "ins",
-                    "sub",
-                    "sup",
-
-                    // Párrafos y títulos
-                    "p",
-                    "div",
-                    "span",
-                    "h1",
-                    "h2",
-                    "h3",
-                    "h4",
-                    "h5",
-                    "h6",
-
-                    // Saltos y separadores
-                    "br",
-                    "hr",
-
-                    // Listas
-                    "ul",
-                    "ol",
-                    "li",
-
-                    // Citas / código
-                    "blockquote",
-                    "q",
-                    "cite",
-                    "code",
-                    "pre",
-
-                    // Enlaces
-                    "a",
-
-                    // Imágenes
-                    "img",
-
-                    // Tablas
-                    "table",
-                    "thead",
-                    "tbody",
-                    "tfoot",
-                    "tr",
-                    "th",
-                    "td",
-
-                    // Contenido semántico
-                    "abbr",
-                    "kbd",
-                    "samp",
-                    "var",
-                    "time"
+                    "b", "strong", "i", "em", "u", "s", "small", "mark",
+                    "del", "ins", "sub", "sup",
+                    "p", "div", "span", "h1", "h2", "h3", "h4", "h5", "h6",
+                    "br", "hr",
+                    "ul", "ol", "li",
+                    "blockquote", "q", "cite", "code", "pre",
+                    "a", "img",
+                    "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+                    "abbr", "kbd", "samp", "var", "time"
                 ],
 
                 ALLOWED_ATTR: [
-                    // Enlaces
-                    "href",
-                    "target",
-                    "rel",
-                    "download",
-
-                    // Imágenes
-                    "src",
-                    "alt",
-                    "title",
-                    "width",
-                    "height",
-                    "loading",
-
-                    // Estilos
-                    "class",
-                    "style",
-
-                    // Tablas
-                    "colspan",
-                    "rowspan",
-
-                    // Semántica
+                    "href", "target", "rel", "download",
+                    "src", "alt", "title", "width", "height", "loading",
+                    "class", "style",
+                    "colspan", "rowspan",
                     "datetime",
-
-                    // Accesibilidad
-                    "aria-label",
-                    "aria-hidden",
-                    "role"
+                    "aria-label", "aria-hidden", "role"
                 ]
             })}
 
@@ -708,18 +697,25 @@ async function loadProfile() {
 
         </div>
 
+        <div id="invite-feedback" class="invite-feedback"></div>
+
     `;
 
-
-    /*
-        Insertar avatar.
-    */
 
     document
         .getElementById(
             "profile-avatar-container"
         )
         .replaceWith(avatar);
+
+
+    // Attach invite button handler
+    if (isOwnProfile) {
+        const inviteBtn = document.getElementById("invite-link-btn");
+        if (inviteBtn) {
+            inviteBtn.addEventListener("click", copyInviteLink);
+        }
+    }
 
 }
 
